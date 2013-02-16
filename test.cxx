@@ -3,7 +3,7 @@
  * University of California, Davis
  *
  * 
- * This gives a nice distribution for sampling over gaps 
+ * Testing, testing ...  
  *
  */
 

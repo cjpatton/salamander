@@ -1,12 +1,25 @@
-/* Christopher Patton
- * John Muir Institute for the Environment
+/* John Muir Institute for the Environment
  * University of California, Davis
- * June 2012
  * 
- * Header for ITK includes and type declarations. This file 
- * also declares functions that implement ITK pipelines for
- * the salamander project. 
+ * salamander.h
+ * Header for ITK includes and type declarations. Declarations for 
+ * functions that implement image processing pipelines. This file is 
+ * part of the Salamander project. 
+ * 
+ * Copyright (C) 2013 Christopher Patton 
  *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 

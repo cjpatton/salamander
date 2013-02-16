@@ -1,18 +1,27 @@
-/* Christopher Patton
- * John Muir Institute for the Environment
+/* John Muir Institute for the Environment
  * University of California, Davis
- * June 2012
  * 
- * Provide statistics about blobs in order to determine a good threshold 
- * value for the filter. 
+ * threshold.cxx
+ * Top-level program applies image processing pipeline to a stream of 
+ * files. This file is part of the Salamander project. 
  * 
- * "calculate the derivative" of an image stream and apply binary morphology 
- * to the blobs in the delta image. Find the connected components and write out
- * the number of blobs per frame as well as the size of all blobs to file. 
- * 
- * 
+ * Copyright (C) 2013 Christopher Patton 
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
+ 
+ 
 #include "salamander.h"
 #include "chunks.h"
 #include "files.h"
