@@ -1,0 +1,13 @@
+#!/bin/bash
+# This script creates a directory called 'filter'
+# and links the files that correspond to the output
+# of the fitler program. Eg: 
+# filter 2 20 40 60 < filenames > filtered
+
+rm -fr filter
+mkdir filter
+
+for file in $(cat filtered)
+do 
+  ln $file -t filter
+done 
