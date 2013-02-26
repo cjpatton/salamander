@@ -439,8 +439,7 @@ void Chunk::updateTarget( ImageType::Pointer &delta, int i )
         end_pos = blobs[0]; 
         std::cout << " approximately equal(2) " << end_pos << std::endl;
       } else {
-        tracks.push_back(Track(tracks.back()));
-        tracks.back().index = i;
+        tracks.push_back(Track(tracks.back().blob, i));
         tracks.back().blob.shiftOverMerged(blobs[0]); 
         end_pos.shiftOverMerged(blobs[0]);  
         std::cout << " shift over merged(2) " <<  end_pos << std::endl;
