@@ -32,6 +32,12 @@
 #include <assert.h>
 using namespace std;
 
+#define SWAP(x,y) { \
+   (x) ^= (y);      \
+   (y) ^= (x);      \
+   (x) ^= (y);      \
+}
+
 const char *help = 
 "This is help for the Salamander project. Salamander is a set of tools for\n\
 automated filtering of video streams for targets of interest. These programs\n\
@@ -77,34 +83,29 @@ bool targetPersistsOverGap( vector<string> &names, Chunks &chunks, int i, int j,
   static ImageType::Pointer A, B; 
   static vector<RelabelComponentImageFilterType::ObjectSizeType> sizes;
 
-  int k, sample = (i+j)/2; 
-  Chunk *chunk; 
-
+  j = (i+j)/2; 
+  
   for (Chunk *chunk = chunks.end(); chunk != NULL; chunk = chunks.prev()) {
     const vector<Track> &tracks = chunk->getTracks();  
-    for (k = tracks.size() - 1; k >= 0 && tracks[k].blob.Intersects(region); --k) 
+    for (i = tracks.size() - 1; i >= 0 && tracks[i].blob.Intersects(region); --i) 
       ; 
-    if (k >= 0) {
-      k = tracks[k].index; 
+    if (i >= 0) {
+      i = tracks[i].index; 
       break; 
     }
     else if (chunk->gapKnown()) {
-      k = chunk->getStartIndex() - 1; 
+      i = chunk->getStartIndex() - 1; 
       break;        
     }
-    else k = 0; 
+    else i = 0; 
   }
 
-  cout << "Try comparing " << names[k] << " with " << names[sample] << endl;
+  if (i > j) 
+    SWAP(i,j); 
   
-  if (k > sample) {
-    int tmp = k; 
-    k = sample;
-    sample = tmp;
-  }
-  
-  A = read(names[k].c_str(), options); 
-  B = read(names[sample].c_str(), options); 
+  cout << "Try comparing " << names[i] << " with " << names[j] << endl;
+  A = read(names[i].c_str(), options); 
+  B = read(names[j].c_str(), options); 
   Blob target = region; 
   
   A = delta(A, B, target);
@@ -112,7 +113,7 @@ bool targetPersistsOverGap( vector<string> &names, Chunks &chunks, int i, int j,
   A = morphology(A, options);
   connectedComponents(A, sizes);
   bool a = (sizes.size() > 0); 
-  sprintf(outname, "blob-%s-%s.jpg", names[sample].c_str(), names[k].c_str());
+  sprintf(outname, "blob-%s-%s.jpg", names[i].c_str(), names[j].c_str());
   write( A, outname ); 
 
   return a;
