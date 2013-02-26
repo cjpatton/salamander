@@ -294,14 +294,16 @@ std::ostream& operator<< (std::ostream &out, const Blob &blob)
  * class Chunk
  */
 
-Chunk::Chunk( tuple<int> ch, Chunk *n ) {
-  start_index = ch.x; 
-  end_index = ch.y; 
-  next = n; 
+Chunk::Chunk( Chunk *p ) {
+  prev = p; 
+  next = NULL; 
+  gap_known = false; 
 }
 
 Chunk::Chunk() {
   next = NULL;
+  prev = NULL; 
+  gap_known = false; 
 }
 
 bool Chunk::gapKnown() const {
@@ -450,12 +452,12 @@ void Chunk::updateTarget( ImageType::Pointer &delta, int i )
 
 const Blob &Chunk::getStartPos() const 
 {
-  return tracks[0].blob; 
+  return start_pos; // FIXME traks[0].blob
 }
 
 const Blob &Chunk::getEndPos() const
 {
-  return tracks.back().blob; 
+  return end_pos; // FIXME tracks.back().blob is used, segfault ?
 } 
 
 const std::vector<Track> &Chunk::getTracks() const 
@@ -504,8 +506,15 @@ Chunk *Chunks::next() {
   return curr;  
 }
 
+Chunk *Chunks::prev() {
+  if (curr) 
+    curr = curr->prev; 
+  return curr; 
+}
+
 Chunk *Chunks::end() {
-  return tail; 
+  curr = tail; 
+  return curr; 
 }
 
 Chunk *Chunks::append( Chunk *gap ) {
@@ -536,6 +545,8 @@ void Chunks::mergeWithNext(Chunk *chunk)
       chunk->tracks.push_back(tracks[i]);    
     chunk->end_pos =   chunk->next->end_pos;
     chunk->next =      chunk->next->next;
+    if (chunk->next)
+      chunk->next->prev = chunk; 
     delete tmp; 
   }
 
@@ -543,24 +554,7 @@ void Chunks::mergeWithNext(Chunk *chunk)
 
 void Chunks::merge( int i, int j )
 {
-  /* Merge gaps into a chunk within range i to j */	
-  Chunk *start = head, *end, *tmp; 
-  while (start && start->getStartIndex() < i)
-    start = start->next; 
-  
-  if (!start) 
-    return;
-
-  end = start->next;  
-  while (end && end->getEndIndex() <= j) {
-    start->setEndIndex( end->getEndIndex() );
-    start->end_pos = end->end_pos; 
-    tmp = end; 
-    end = end->next; 
-    delete tmp; 
-  }
-
-  start->next = end; 
+  /* TODO Merge gaps into a chunk within range i to j */	
       
 }
 

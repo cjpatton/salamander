@@ -113,7 +113,7 @@ friend std::ostream &operator<< (std::ostream &out, const Chunk &chunk);
 friend class Chunks; 
 public:
 
-  Chunk( tuple<int> ch, Chunk *n=NULL );
+  Chunk( Chunk *p );
   Chunk(); 
   bool gapKnown() const; 
   void gapKnown( bool k ); 
@@ -135,7 +135,7 @@ private:
   int start_index, end_index;   // range where movement is detected
   Blob start_pos, end_pos;
   std::vector<Track> tracks; 
-  Chunk *next; 
+  Chunk *prev, *next; 
 
 };
 
@@ -150,7 +150,8 @@ public:
   ~Chunks();
   int size() const;
   Chunk *start(); 
-  Chunk *next(); 
+  Chunk *next();
+  Chunk *prev();  
   Chunk *end(); 
   Chunk *append( Chunk *gap ); 
   Chunk *back();

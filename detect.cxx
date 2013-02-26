@@ -49,39 +49,6 @@ param_t options; // threshold/morphology options
 char outname [256]; 
 int  outname_index = 0; 
 
-class TrackHistory {
-
-  vector<Track> tracks; 
-  
-  public:
-  
-  TrackHistory() {
-    tracks.push_back(Track(Blob(), 0)); 
-  }
-  
-  int getLastKnownGap() const {
-    return tracks[0].index;
-  }
-  
-  void setLastKnownGap(int i) {
-    tracks[0].index = i; 
-    /* chop off beginning of tracks list */    
-  }
-  
-  const vector<Track>& getTracks() const {
-    return tracks; 
-  }
-  
-  void update(const Blob &blob, int i) {
-    tracks.push_back(Track(blob, i)); 
-  }
-  
-  
-  
-}; 
-
-
-
 bool delta( string &img1, string &img2, ImageType::Pointer &image, bool writeout=false ) 
 {
   static ImageType::Pointer im;
@@ -105,29 +72,38 @@ bool delta( string &img1, string &img2, ImageType::Pointer &image, bool writeout
 }
 
 
-bool targetPersistsOverGap( vector<string> &names, int i, int j, const Blob &region, TrackHistory &history )
+bool targetPersistsOverGap( vector<string> &names, Chunks &chunks, int i, int j, const Blob &region )
 { 
   static ImageType::Pointer A, B; 
   static vector<RelabelComponentImageFilterType::ObjectSizeType> sizes;
 
-  int sample = (i+j)/2; 
+  int k, sample = (i+j)/2; 
+  Chunk *chunk; 
 
-  int k; 
-  vector<Track> tracks = history.getTracks();
-  for (k = tracks.size() - 1; k >= 0  && tracks[k].blob.Intersects(region); --k)
-    ;
+  for (Chunk *chunk = chunks.end(); chunk != NULL; chunk = chunks.prev()) {
+    const vector<Track> &tracks = chunk->getTracks();  
+    for (k = tracks.size() - 1; k >= 0 && tracks[k].blob.Intersects(region); --k) 
+      ; 
+    if (k >= 0) {
+      k = tracks[k].index; 
+      break; 
+    }
+    else if (chunk->gapKnown()) {
+      k = chunk->getStartIndex() - 1; 
+      break;        
+    }
+    else k = 0; 
+  }
+
+  cout << "Try comparing " << names[k] << " with " << names[sample] << endl;
   
-  cout << "Try comparing " << names[tracks[k].index] << " with " << names[sample] << endl;
-  
-  i = tracks[k].index;
-  
-  if (i > sample) {
-    int tmp = i; 
-    i = sample;
+  if (k > sample) {
+    int tmp = k; 
+    k = sample;
     sample = tmp;
   }
   
-  A = read(names[i].c_str(), options); 
+  A = read(names[k].c_str(), options); 
   B = read(names[sample].c_str(), options); 
   Blob target = region; 
   
@@ -136,7 +112,7 @@ bool targetPersistsOverGap( vector<string> &names, int i, int j, const Blob &reg
   A = morphology(A, options);
   connectedComponents(A, sizes);
   bool a = (sizes.size() > 0); 
-  sprintf(outname, "blob-%s-%s.jpg", names[sample].c_str(), names[i].c_str());
+  sprintf(outname, "blob-%s-%s.jpg", names[sample].c_str(), names[k].c_str());
   write( A, outname ); 
 
   return a;
@@ -153,7 +129,6 @@ int createChunks( vector<string> &names, Chunks &chunks )
   {
     int master=0, left, right, s;
     Chunk *chunk=NULL, *prev=NULL; 
-    TrackHistory history; 
     ImageType::Pointer im; 
     
     /* Output images with target bounding box drawn. */
@@ -168,15 +143,15 @@ int createChunks( vector<string> &names, Chunks &chunks )
 
         cout << " * " << names[i] << endl;
         prev = chunks.back();
-        chunk = new Chunk(); 
-        if (prev)
+        if (prev) { 
+          chunk = new Chunk(prev); 
           chunk->setStartPos( im, prev->getEndPos(), i ); 
-        else {
+        } else {
+          chunk = new Chunk(); 
           chunk->setStartPos( im, i ); 
           chunk->gapKnown( true ); /* preceeding gap known to be empty */ 
         }
-        history.update( chunk->getEndPos(), i ); 
-               
+             
         sprintf(outname, "tracking-%s", names[i].c_str());
         drawBoundingBox(names[i].c_str(), outname, 
                         chunk->getEndPos() * options.shrink_factor); 
@@ -188,7 +163,6 @@ int createChunks( vector<string> &names, Chunks &chunks )
         for( i++ ; i < names.size() && delta( names[i], names[i-1], im ); i++ ) {
           cout << " | " << names[i] << endl;
           chunk->updateTarget( im, i ); 
-          history.update( chunk->getEndPos(), i ); 
           sprintf(outname, "tracking-%s", names[i].c_str());
           drawBoundingBox(names[i].c_str(), outname, 
                           chunk->getEndPos() * options.shrink_factor); 
@@ -199,16 +173,15 @@ int createChunks( vector<string> &names, Chunks &chunks )
         
         chunks.append( chunk ); 
         if (prev) {
-          if (targetPersistsOverGap(names, prev->getEndIndex(), chunk->getStartIndex(), prev->getEndPos(), history))
+          if (targetPersistsOverGap(names, chunks, prev->getEndIndex(), chunk->getStartIndex(), prev->getEndPos()))
             chunks.mergeWithNext(prev);
           else {
             chunk->gapKnown( true ); /* preceeding gap known to be empty */ 
-            history.setLastKnownGap(chunk->getStartIndex()-1);  
           }
         }
         tracking = true; 
         lastSeen = chunk->getEndPos(); 
-
+  
 
       }
       else {
