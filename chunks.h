@@ -63,6 +63,8 @@ public:
 
   Blob(); 
 
+  Blob( int top, int right, int bottom, int left ); 
+
   Blob( LabelGeometryImageFilterType::BoundingBoxType b,
         LabelGeometryImageFilterType::LabelPointType c, double e, int v,
         int w, int h );
@@ -91,6 +93,18 @@ public:
 
 std::ostream& operator<< (std::ostream &out, const Blob &blob); 
 
+struct Track {
+  Blob blob; 
+  int  index; 
+  
+  Track(const Blob &b, int i) {
+    blob  = b;
+    index = i; 
+  }
+}; 
+
+
+
 /* Chunk is comprised of an index range of frames where the 
  * target is moving about. Also, calculate the start and 
  * ending position of the target (as a Blob). */ 
@@ -101,22 +115,26 @@ public:
 
   Chunk( tuple<int> ch, Chunk *n=NULL );
   Chunk(); 
+  bool gapKnown() const; 
+  void gapKnown( bool k ); 
   int getStartIndex() const;
   int getEndIndex() const;
   void setStartIndex( int i );
-  void setEndIndex( int i );  
+  void setEndIndex( int i );
   
-  void setStartPos( ImageType::Pointer &delta );  // track target over chunk
-  void setStartPos( ImageType::Pointer, const Blob &last_known_pos ); 
-  void updateTarget( ImageType::Pointer &delta ); 
+  void setStartPos( ImageType::Pointer &delta, int i );  // track target over chunk
+  void setStartPos( ImageType::Pointer, const Blob &last_known_pos, int i ); 
+  void updateTarget( ImageType::Pointer &delta, int i ); 
   const Blob &getStartPos() const; 
   const Blob &getEndPos() const; 
+  const std::vector<Track>& getTracks() const; 
 
 private: 
 
+  bool gap_known;               // is preceeding gap known to not contain a target
   int start_index, end_index;   // range where movement is detected
-  Blob start_pos, end_pos;      // positions of target at the start and 
-                                // end of chunk
+  Blob start_pos, end_pos;
+  std::vector<Track> tracks; 
   Chunk *next; 
 
 };
