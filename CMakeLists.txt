@@ -25,9 +25,11 @@ add_executable(detect detect.cxx)
 add_executable(test test.cxx)
 add_library(salamander SHARED files.h
                               chunks.h
+                              blob.h
                               salamander.h
                               files.cxx
                               chunks.cxx
+                              blob.cxx
                               salamander.cxx)
 #add_executable(hi hi.cxx)
 

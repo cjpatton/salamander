@@ -22,7 +22,7 @@
  */
 
 #include "salamander.h"
-#include "chunks.h"
+#include "blob.h"
 #include "files.h"
 #include <algorithm> // sort()
 #include <cstring>
