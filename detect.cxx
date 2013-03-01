@@ -171,7 +171,10 @@ int createChunks( vector<string> &names, Chunks &chunks )
         right = --i; 
         chunk->setStartIndex( left ); 
         chunk->setEndIndex( right ); 
-        
+
+        tracking = true; 
+        lastSeen = chunk->getEndPos(); 
+
         chunks.append( chunk ); 
         if (prev) {
           if (targetPersistsOverGap(names, chunks, prev->getEndIndex(), chunk->getStartIndex(), prev->getEndPos()))
@@ -180,10 +183,7 @@ int createChunks( vector<string> &names, Chunks &chunks )
             chunk->gapKnown( true ); /* preceeding gap known to be empty */ 
           }
         }
-        tracking = true; 
-        lastSeen = chunk->getEndPos(); 
-  
-
+       
       }
       else {
         cout << "   " << names[i] << endl;

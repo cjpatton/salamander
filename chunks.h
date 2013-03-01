@@ -28,29 +28,16 @@
 #include <iostream>
 #include "blob.h"
 
-
-class Track {
-public:
+struct Track {
   Blob blob; 
   int  index; 
-  
+
   Track() {
   }
 
   Track(const Blob &b, int i) {
-    blob  = b;
+    blob =  b; 
     index = i; 
-  }
-
-  Track(const Track &track) {
-    blob = track.blob; 
-    index = track.index; 
-  }
-
-  Track& operator=(const Track &track) {
-    blob = track.blob; 
-    index = track.index; 
-    return *this; 
   }
 }; 
 
@@ -84,7 +71,6 @@ private:
 
   bool gap_known;               // is preceeding gap known to not contain a target
   int start_index, end_index;   // range where movement is detected
-  Blob start_pos, end_pos;
   std::vector<Track> tracks; 
   Chunk *prev, *next; 
 

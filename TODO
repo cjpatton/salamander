@@ -1,11 +1,3 @@
-If I functionally remove start_pos/end_pos from chunks.cxx, getEndPos() returns 
-a corrupted data and results in a segfault higher up the stack. 
- - The problem appears to be in Chunks::mergeWithNext(), in which the track
-   history from the intermediate chunk is merged. If the line 'delete tmp' 
-   is removed, then this segfault doesn't occur. This suggests that push_back()
-   is calling by reference and when the referenced vector is deallocated, 
-   we have a dangling reference.
- - This may be class Blob's fault. Check operator=.  
 
 Restructure code. 'filter' should do what 'detect' does. 'detect' should be 
 used for deers. 

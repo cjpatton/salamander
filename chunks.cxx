@@ -25,6 +25,8 @@
 #include "salamander.h"
 #include "chunks.h"
 #include <iostream>
+#include <assert.h>
+
 
 /**
  * class Chunk
@@ -73,13 +75,11 @@ void Chunk::setEndIndex( int i )
 void Chunk::setStartPos( ImageType::Pointer &delta, int i ) 
 {
   /* for now, assume there is only ever one target to watch. */
-  tracks.clear(); 
   std::vector<Blob> blobs; 
   switch (getBlobs(delta, blobs)) {
     case 1: /* There should be only one blob in the delta frame
                at the start of a new chunk. (Of course, assuming
                the previous gap had no target.) */ 
-      start_pos = end_pos = blobs[0]; 
       tracks.push_back(Track(blobs[0], i)); 
       break;
                
@@ -90,20 +90,17 @@ void Chunk::setStartPos( ImageType::Pointer &delta, int i )
 void Chunk::setStartPos( ImageType::Pointer delta, const Blob &last_known_pos, int i ) 
 {
   /* for now, assume there is only ever one target to watch. */
-  tracks.clear(); 
   std::vector<Blob> blobs; 
   switch (getBlobs(delta, blobs)) {
     case 2: /* If this is the case, then the blob that isn't 
                the same as end_pos should be the new end_pos. */
       if (last_known_pos.Intersects(blobs[0])) {
-        start_pos = end_pos = blobs[1]; 
         tracks.push_back(Track(blobs[1], i)); 
       }
       else {
         tracks.push_back(Track(blobs[0], i));
-        start_pos = end_pos = blobs[0]; 
       }
-      std::cout << " moved(1) " <<  end_pos << std::endl;
+      std::cout << " moved(1) " << tracks.back().blob << std::endl;
       break;
     case 1: /* The target has moved, but not far enough for the 
                filtering step to produce result in two distinct 
@@ -114,22 +111,17 @@ void Chunk::setStartPos( ImageType::Pointer delta, const Blob &last_known_pos, i
       if (!last_known_pos.Intersects(blobs[0])) { /* One blob, doesn't intersect with 
                                                      previous. */ 
         tracks.push_back(Track(blobs[0], i));
-        start_pos = end_pos = blobs[0];     
-        std::cout << " moved(2) " << end_pos << std::endl;
+        std::cout << " moved(2) " << tracks.back().blob << std::endl;
       } else if (last_known_pos == blobs[0]) { /* they are roughly equal in size and shape. 
-                                                * In this case, the target has rotated or 
-                                                * changed its orientation without moving
-                                                * much. */
+                                                  In this case, the target has rotated or 
+                                                  changed its orientation without moving
+                                                  much. */
         tracks.push_back(Track(blobs[0], i));
-        start_pos = end_pos = blobs[0]; 
-        std::cout << " approximately equal(1) " << end_pos << std::endl;
+        std::cout << " approximately equal(1) " << tracks.back().blob << std::endl;
       } else {
         tracks.push_back(Track(last_known_pos, i)); 
         tracks.back().blob.shiftOverMerged(blobs[0]);      
-        start_pos = last_known_pos;
-        start_pos.shiftOverMerged(blobs[0]);  
-        end_pos = start_pos; 
-        std::cout << " shift over merged(1) " << end_pos << std::endl;
+        std::cout << " shift over merged(1) " << tracks.back().blob << std::endl;
       }
       break;
     default: std::cout << "I Hope this doesn't happen yet(2)\n";    
@@ -146,15 +138,13 @@ void Chunk::updateTarget( ImageType::Pointer &delta, int i )
   switch (getBlobs(delta, blobs)) {
     case 2: /* If this is the case, then the blob that isn't 
                the same as end_pos should be the new end_pos. */
-      if (end_pos.Intersects(blobs[0])) {
+      if (tracks.back().blob.Intersects(blobs[0])) {
         tracks.push_back(Track(blobs[1], i)); 
-        end_pos = blobs[1]; 
       }
       else {
         tracks.push_back(Track(blobs[0], i)); 
-        end_pos = blobs[0]; 
       }
-      std::cout << " moved(3) " <<  end_pos << std::endl;
+      std::cout << " moved(3) " <<  tracks.back().blob << std::endl;
       break;
     case 1: /* The target has moved, but not far enough for the 
                filtering step to produce result in two distinct 
@@ -162,23 +152,20 @@ void Chunk::updateTarget( ImageType::Pointer &delta, int i )
                direction in which the blob was moving, move it to 
                the new position, but keep the same dimensions as
                before. */ 
-      if (!end_pos.Intersects(blobs[0])) { /* One blob, doesn't intersect with 
-                                              previous. */ 
-        tracks.push_back(Track(blobs[0], i));                                               
-        end_pos = blobs[0];     
-        std::cout << " moved(4) " << end_pos << std::endl;
-      } else if (end_pos == blobs[0]) { /* they are roughly equal in size and shape. 
-                                         * In this case, the target has rotated or 
-                                         * changed its orientation without moving
-                                         * much. */
-        tracks.push_back(Track(blobs[0], i));                                               
-        end_pos = blobs[0]; 
-        std::cout << " approximately equal(2) " << end_pos << std::endl;
+      if (!tracks.back().blob.Intersects(blobs[0])) { /* One blob, doesn't intersect with 
+                                                          previous. */ 
+        tracks.push_back(Track(blobs[0], i));
+        std::cout << " moved(4) " << tracks.back().blob << std::endl;
+      } else if (tracks.back().blob == blobs[0]) { /* they are roughly equal in size and shape. 
+                                                      In this case, the target has rotated or 
+                                                      changed its orientation without moving
+                                                      much. */
+        tracks.push_back(Track(blobs[0], i)); 
+        std::cout << " approximately equal(2) " << tracks.back().blob << std::endl;
       } else {
         tracks.push_back(Track(tracks.back().blob, i));
         tracks.back().blob.shiftOverMerged(blobs[0]); 
-        end_pos.shiftOverMerged(blobs[0]);  
-        std::cout << " shift over merged(2) " <<  end_pos << std::endl;
+        std::cout << " shift over merged(2) " <<  tracks.back().blob << std::endl;
       }
       break;
     default: std::cout << "I Hope this doesn't happen yet(2)\n";    
@@ -187,15 +174,15 @@ void Chunk::updateTarget( ImageType::Pointer &delta, int i )
 
 const Blob &Chunk::getStartPos() const 
 {
-  return start_pos; // FIXME traks[0].blob
+  return tracks[0].blob;
 }
 
 const Blob &Chunk::getEndPos() const
 {
-  return end_pos; // FIXME tracks.back().blob is used, segfault ?
+  return tracks.back().blob; 
 } 
 
-const std::vector<Track> &Chunk::getTracks() const 
+const std::vector<Track> &Chunk::getTracks() const
 {
   return tracks; 
 } 
@@ -252,13 +239,14 @@ Chunk *Chunks::end() {
   return curr; 
 }
 
-Chunk *Chunks::append( Chunk *gap ) {
+Chunk *Chunks::append( Chunk *chunk ) {
   ct ++;
   if (!head) {
-    head = tail = gap; 
+    head = tail = chunk; 
   } else {
-    tail->next = gap; 
-    tail = gap; 
+    chunk->prev = tail; 
+    tail->next = chunk; 
+    tail = chunk; 
   }
   return tail; 
 }
@@ -269,27 +257,30 @@ Chunk *Chunks::back() {
 
 void Chunks::mergeWithNext(Chunk *chunk) 
 {
-  if (tail == chunk->next) 
-    tail = chunk;
-
   if (chunk->next) {
-    Chunk *tmp = chunk->next; 
-    chunk->end_index = chunk->next->end_index;
+    chunk->end_index = chunk->next->end_index; 
     const std::vector<Track> &tracks = chunk->next->tracks; 
-    for (int i = 0; i < tracks.size(); i++) 
+    for (int i = 0; i < tracks.size(); i++)
       chunk->tracks.push_back(tracks[i]);    
-    chunk->end_pos =   chunk->next->end_pos;
-    chunk->next =      chunk->next->next;
-    if (chunk->next)
-      chunk->next->prev = chunk; 
-    delete tmp; 
+
+    Chunk *del = chunk->next;
+    if (del->prev && del->next) {
+       del->prev->next = del->next;
+       del->next->prev = del->prev;
+    } else if (del->prev) {
+       del->prev->next = del->next;
+       tail = del->prev;
+    } else if (del->next) {
+       del->next->prev = del->prev;
+       head = del->next;
+    }
+
+    delete del;
+
   }
-
 }
-
+ 
 void Chunks::merge( int i, int j )
 {
   /* TODO Merge gaps into a chunk within range i to j */	
-      
 }
-

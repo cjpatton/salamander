@@ -9,7 +9,6 @@ friend std::ostream& operator<< (std::ostream&, const Blob&);
 
   int bbox [4];                 /* bounding box */ 
   int frameWidth, frameHeight;  /* dimensions of video stream */  
-  ImageType::RegionType region;
 
   /* relevant? */ 
   int centroidX, centroidY; 
