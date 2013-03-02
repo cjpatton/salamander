@@ -21,7 +21,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 #ifndef FILES_H
 #define FILES_H
 #include <vector>
@@ -30,7 +29,7 @@
 void die( const char *msg );
 
 /**
- * Check if file is 0 bytes
+ * Check if file is 0 bytes. This is system dependent. 
  */
 bool empty( const char *file );
 
@@ -43,6 +42,11 @@ void filenames( std::vector<std::string> &names, std::istream &in );
  * Sort function for files
  */ 
 bool cmp(const std::string &a, const std::string &b); 
+
+/** 
+ * Generate normally distributed samples over a range of indices.
+ */ 
+void sample(std::vector<int> &samples, int ct, int i, int j, int mean, int sd); 
 
 
 /** 
@@ -57,6 +61,9 @@ struct param_t {
 
 }; 
 
+/**
+ * Parse command line options
+ */
 int parse_options( param_t &options, int argc, const char **argv ); 
 
 

@@ -58,11 +58,6 @@
 #include <string>
 
 
-/** 
- * Generate normally distributed samples over a range of indices.
- */ 
-void sample(std::vector<int> &samples, int ct, int i, int j, int mean, int sd); 
-
 /**
  * Types for the various ITK pipelines. 
  */

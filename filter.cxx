@@ -2,7 +2,9 @@
  * University of California, Davis
  * 
  * filter.cxx
- * Probably deprecated. 
+ * Top-level program applies image processing pipeline to a stream of 
+ * files. Output a list of blobs for each delta. This file is part of the 
+ * Salamander project. 
  * 
  * Copyright (C) 2013 Christopher Patton 
  *
@@ -20,17 +22,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
  
+ 
 #include "salamander.h"
 #include "chunks.h"
 #include "files.h"
-#include <iostream>
-#include <cstdlib>
+#include <cstdio> //sprintf()
 using namespace std;
+
 const char *help = 
-"This is help for the Salamander project. Salamander is a set of tools for\n\
+" flter - apply image procesing pipeline to video stream.\n\
+This is help for the Salamander project. Salamander is a set of tools for\n\
 automated filtering of video streams for targets of interest. These programs\n\
 input a list of JPEG images on standard input and process them in alphanumeric\n\
-order. Eg. ls *.jpg | detect <options>\n\
+order, e.g., ls *.jpg | detect <options>\n\
 \n\
   -t L H     Binary threshold range <L, H>. 0 < L < H < 255.\n\n\
   -m E D     Binary morphology erode and dilate factors. Eg., 2 20.\n\
@@ -39,76 +43,50 @@ order. Eg. ls *.jpg | detect <options>\n\
   -f name    File prefix for output files.\n\n\
   -h         Display this message.";
 
-param_t options; // threshold/morphology options 
-char outname [256]; 
-int  outname_index = 0; 
-
-bool track( string &img ) 
-{
-  static int  i = 0; 
-  static char outname [256];
-  static ImageType::Pointer im;
-  static vector<RelabelComponentImageFilterType::ObjectSizeType> sizes;
-
-  im = threshold( img.c_str(), options );
-  im = morphology( im, options );
-  connectedComponents( im, sizes );
-  sprintf(outname, "%s%d.jpg", options.prefix, outname_index++);
-  write( im, outname ); 
-
-  /* if there are blobs in the delta image, a target is in the frame */
-  if( sizes.size() > 0 ) 
-    return true;
-
-  else return false;
-}
-
-int run( vector<string> &names ) 
-{
-
-  try 
-  {
-    for( int i = 0; i < names.size(); i++ ) {
-
-      if( track( names[i] ) )
-        cout << " b " << names[i] << endl;
-
-      else 
-        cout << "   " << names[i] << endl;
-      
-    }
-
-  }
-  
-  catch( itk::ExceptionObject & err )
-  {
-    std::cerr << "ExceptionObject caught !" << std::endl;
-    std::cerr << err << std::endl;
-    return EXIT_FAILURE;
-  }
-  return EXIT_SUCCESS; 
-}
-
-
-
-
-
-
 int main(int argc, const char **argv) 
 {
-  int i, j;
-      
-  if (!parse_options( options, argc, argv ))
-    die(help); 
+    int i, j; 
 
-  if (options.erode < 0) 
-    die("error: must specify binary morphology factors");
+    param_t options;
 
+    if (!parse_options( options, argc, argv ))
+      die(help);
 
-  /* get file names */
-  std::vector<std::string> names; 
-  filenames( names, std::cin );
-  
-  return run( names ); 
+    if (options.erode < 0) 
+      die("error: must specify binary morphology factors");
+
+    /* get file names */
+    std::vector<std::string> names; 
+    filenames( names, std::cin );
+
+    ImageType::Pointer im;
+    std::vector<RelabelComponentImageFilterType::ObjectSizeType> sizes;
+    std::vector<Blob> blobs; 
+
+    char outname[256]; 
+    int outindex = 0; 
+
+    try 
+    {
+        for( i = 1; i < names.size(); i ++ ) {
+            cout << names[i-1] << ' ' << names[i] << endl;
+            im = delta(names[i].c_str(), names[i-1].c_str(), true, options );
+            im = morphology( im, options );
+            getBlobs( im, blobs ); 
+
+            sprintf(outname, "%s-%s-%s.jpg", options.prefix, names[i-1].c_str(), names[i].c_str()); 
+            write( im, outname ); 
+
+            for( j = 0; j < blobs.size(); j++) {
+              cout << "     " << blobs[j] << endl; 
+            }
+        }
+    }
+
+    catch( itk::ExceptionObject & err )
+    {
+        std::cerr << "ExceptionObject caught !" << std::endl;
+        std::cerr << err << std::endl;
+        return EXIT_FAILURE;
+    }
 }
-

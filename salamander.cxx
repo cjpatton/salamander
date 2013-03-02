@@ -26,64 +26,10 @@
 #include "files.h"
 #include <algorithm> // sort()
 #include <cstring>
-#include <cmath>
 #include <cstdlib>
 
-
-
-/** 
- * Box-Muller method for approximating a normal distribution. Generate normally 
- * distributed samples over a range of indices. 
- */ 
-void sample(std::vector<int> &samples, int ct, int i, int j, int mean, int sd) 
-{
-  samples.clear(); 
-  int tmp; 
-  if (j < i) {
-    tmp = i;
-    i = j; 
-    j = tmp; 
-  }
-
-  double U, V, X, Y, pi = (double)22/7; 
-  
-  tmp = ct; 
-  while (tmp > 0) {
-    /* uniform random number in (0,1] */
-    U = ((double)(rand() % 100000) / 100000);
-    V = ((double)(rand() % 100000) / 100000);
-
-    /* X and Y are independent random variables drawn from a normal 
-     * distribution. Default is X,Y~N(1,0), or standard normal Z. */ 
-    U = sqrt(-2 * log(U)); 
-    X = U * cos(2 * pi * V);
-    Y = U * sin(2 * pi * V); 
-    X = (X * sd) + mean; 
-    Y = (Y * sd) + mean; 
-
-    /* Throw out samples outside of range */
-    if (i < (int)X && (int)X < j) {
-      samples.push_back((int)X); 
-      tmp--;  
-    } 
-
-    if (tmp > 0 && i < (int)Y && (int)Y < j) {
-      samples.push_back((int)Y); 
-      tmp--; 
-    }
-  
-  }
-
-}
-
-
-
-
-
-/**
- * count the frequency of each pixel color. 
- */
 void countPixels(ImageType::Pointer im) 
+/* count the frequency of each pixel color (gray scale images) */ 
 {
     static int pixels [256];
     memset(pixels, 0, sizeof(int) * 256); 
@@ -101,13 +47,12 @@ void countPixels(ImageType::Pointer im)
 }
 
 
-/**
- * Subtract a video frame from the previous in the stream and apply a binary
- * filter 
- */
 ImageType::Pointer delta( const char *in1, 
                           const char *in2, 
-                          bool thresh, const param_t &options ) {
+                          bool thresh, const param_t &options ) 
+/* Subtract a video frame from the previous in the stream and apply
+ * binary morphology filter. */
+{
     /* readers */
     Reader::Pointer reader1 = Reader::New();
     reader1->SetFileName( in1 );
@@ -173,13 +118,12 @@ ImageType::Pointer delta( const char *in1,
         //<< "min:  " << stats->GetMinimum() << std::endl
         //<< "max:  " << stats->GetMaximum() << std::endl
         << "mean: " << stats->GetMean() << std::endl;*/
-    
-}
+   
+} // original delta() 
 
-/**
- * Apply binary threshold to an image 
- */
-ImageType::Pointer threshold( const char *in, const param_t &options ) {
+ImageType::Pointer threshold( const char *in, const param_t &options ) 
+/* Binary threshold. */ 
+{
     /* readers */
     Reader::Pointer reader = Reader::New();
     reader->SetFileName( in );
@@ -203,12 +147,11 @@ ImageType::Pointer threshold( const char *in, const param_t &options ) {
     
     abs->Update();
     return abs->GetOutput();
-}
+} // threshold()
 
-/**
- * Read and convert an image for the processing pipeline. 
- */
-ImageType::Pointer read( const char *in, const param_t &options ) {
+ImageType::Pointer read( const char *in, const param_t &options ) 
+/* Read and convert an image for the processing pipeline. */
+{
     Reader::Pointer reader = Reader::New();
     reader->SetFileName( in );
    
@@ -223,15 +166,13 @@ ImageType::Pointer read( const char *in, const param_t &options ) {
 
     shrinker->Update(); 
     return shrinker->GetOutput(); 
-}
+} // read() 
 
-/**
- * Subtract a video frame from the previous in the stream and apply a binary
- * filter 
- */
 ImageType::Pointer delta( ImageType::Pointer &im1, 
                           ImageType::Pointer &im2, 
-                          bool thresh, const param_t &options ) {
+                          bool thresh, const param_t &options ) 
+/* Subtrac a video frame from prevoius in stream and apply binary threshold. */
+{
 
     /* subtract image from next in series */
     SubtractImageFilterType::Pointer subtractor = SubtractImageFilterType::New(); 
@@ -258,16 +199,13 @@ ImageType::Pointer delta( ImageType::Pointer &im1,
         abs->Update(); 
         return abs->GetOutput(); 
     }
+} // delata() 
 
-}
-
-/**
- * Subtract a video frame fromt he prevous in the stream within the region 
- * specified by blob only. 
- */ 
 ImageType::Pointer delta( ImageType::Pointer &im1, 
                           ImageType::Pointer &im2, 
-                          const Blob &blob ) {
+                          const Blob &blob ) 
+/* Just calculate delta. */ 
+{
 
     /* Region of Interest filter */
     ROIFilterType::Pointer filter1 = ROIFilterType::New(), 
@@ -301,14 +239,13 @@ ImageType::Pointer delta( ImageType::Pointer &im1,
 
     abs->Update(); 
     return abs->GetOutput();
-}
+} // delta() 
 
 
-/**
- * Apply binary threshold
- */
-ImageType::Pointer threshold( ImageType::Pointer &im, const param_t &options ) {
-    
+ImageType::Pointer threshold( ImageType::Pointer &im, const param_t &options ) 
+/* Apply binary threshold filter to delta. */  
+{
+   
     /* binary threshold filter */
     BinaryThresholdImageFilterType::Pointer 
         threshold = BinaryThresholdImageFilterType::New(); 
@@ -320,13 +257,12 @@ ImageType::Pointer threshold( ImageType::Pointer &im, const param_t &options ) {
 
     threshold->Update(); 
     return threshold->GetOutput(); 
-}
+} // threshold() 
 
-
-/**
- * Apply binary morphology. Erode away weak blobs and dilate blobs of interest. 
- */
-ImageType::Pointer morphology( ImageType::Pointer &im, const param_t &options ) {
+ImageType::Pointer morphology( ImageType::Pointer &im, const param_t &options ) 
+/* Apply binary morphology filter to delta. Erode away weak blobs and dilate 
+ * the remaining. */
+{
     ErodeFilterType::Pointer    erode = ErodeFilterType::New();
     DilateFilterType::Pointer   dilate = DilateFilterType::New();
   
@@ -350,24 +286,20 @@ ImageType::Pointer morphology( ImageType::Pointer &im, const param_t &options ) 
 
     dilate->Update(); 
     return dilate->GetOutput();
-}
+} // threshold() 
 
-/**
- * Duplicate an image
- */
-void copy( ImageType::Pointer &im1, const ImageType::Pointer &im2 ) {
-  
+void copy( ImageType::Pointer &im1, const ImageType::Pointer &im2 ) 
+/* Duplicate an image. */ 
+{
   DuplicatorType::Pointer duplicator = DuplicatorType::New();
   duplicator->SetInputImage(im2); 
   duplicator->Update();
-  im1 = duplicator->GetOutput(); 
-  
-}
+  im1 = duplicator->GetOutput();  
+} // copy() 
 
-/**
- * cast a file to JPEG compatible output and write to disk
- */
-void write( ImageType::Pointer &im, const char *out ) {
+void write( ImageType::Pointer &im, const char *out ) 
+/* Cast an image to JPEG compatible output and write to disk. */
+{
     /* make sure to output in correct JPEG format */
     CastImageFilterType::Pointer caster = CastImageFilterType::New();
     caster->SetInput( im );
@@ -377,16 +309,13 @@ void write( ImageType::Pointer &im, const char *out ) {
     writer->SetInput( caster->GetOutput() );
     writer->SetFileName( out );
     writer->Update();
-}
+} // write() 
 
 
-/**
- * Perform connected component analysis and return a 
- * vector of the blob sizes. 
- */
 void connectedComponents( 
  ImageType::Pointer &im, 
  std::vector<RelabelComponentImageFilterType::ObjectSizeType> &sizes ) 
+/* Simple (fast) connected component anaylysis. Return a vector of blob sizes. */ 
 {
     sizes.clear(); 
   
@@ -405,15 +334,13 @@ void connectedComponents(
     relabel->Update();
 
     sizes = relabel->GetSizeOfObjectsInPixels(); 
-}
+} // connectedComponents() 
 
 
-/** 
- * Calculate blob centroids from a delta image. The filters in this unction use 
- * connected component analysis. Return the number of 
- * blobs in the image. 
- */ 
 int getBlobs( ImageType::Pointer &im, std::vector<Blob> &blobs ) 
+/* Connected component analysis, but give more information about the blobs. 
+ * Return a vector of Blob objects with bounding box, centroid, volume (size), 
+ * and elongation. */ 
 {
   int i; 
   
@@ -469,13 +396,11 @@ int getBlobs( ImageType::Pointer &im, std::vector<Blob> &blobs )
   }
 
   return blobs.size(); 
-}
+} // getBlobs() 
 
-/**
- * Input a JPEG image, draw a rectangle around a blob's bounding box, 
- * output the resulting image. 
- */
 void drawBoundingBox( const char *in, const char *out, const Blob &blob ) 
+/* Draw a bounding box on a JPEG image, as specified by a Blob object. Output
+ * to a new file. */ 
 {
 
   Reader::Pointer reader = Reader::New();
@@ -541,4 +466,4 @@ void drawBoundingBox( const char *in, const char *out, const Blob &blob )
   writer->SetFileName( out );
   writer->Update();
   
-}
+} // drawBoundingBox() 

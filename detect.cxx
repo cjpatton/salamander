@@ -1,11 +1,14 @@
 /* John Muir Institute for the Environment
  * University of California, Davis
  * 
- * detect.cxx
- * Top-level program applies image processing pipeline to a stream of 
- * files and outputs segments containg targets. There is a lot of work
- * To be done on this program. This file is part of the Salamander 
- * project. 
+ * detect.cxx TODO 
+ * Here is where I will work on a more sophisticated approach to 
+ * detection. Currently, detetion assumes that all noise is filtered 
+ * out in binary thersholding and morphology. While this is good for 
+ * small targets and a high frequency of images, it is less practical
+ * when noise is an inevitability. The data I'll be working with will 
+ * field cameras capturing deer footage. A photo is taken every 4 
+ * minutes. 
  * 
  * Copyright (C) 2013 Christopher Patton 
  *
@@ -39,7 +42,8 @@ using namespace std;
 }
 
 const char *help = 
-"This is help for the Salamander project. Salamander is a set of tools for\n\
+" detect[NOT IMPLEMENTED] - more sophisticated detection scheme.\n\
+This is help for the Salamander project. Salamander is a set of tools for\n\
 automated filtering of video streams for targets of interest. These programs\n\
 input a list of JPEG images on standard input and process them in alphanumeric\n\
 order. Eg. ls *.jpg | detect <options>\n\
@@ -55,202 +59,6 @@ param_t options; // threshold/morphology options
 char outname [256]; 
 int  outname_index = 0; 
 
-bool delta( string &img1, string &img2, ImageType::Pointer &image, bool writeout=false ) 
-{
-  static ImageType::Pointer im;
-  static vector<RelabelComponentImageFilterType::ObjectSizeType> sizes;
-
-  im = delta( img1.c_str(), img2.c_str(), true, options );
-  im = morphology( im, options  );
-  connectedComponents( im, sizes );
-  if (writeout) {
-    sprintf(outname, "%s%d.jpg", options.prefix, outname_index++);
-    write( im, outname ); 
-  }
-
-  /* if there are blobs in the delta image, a target is in the frame */
-  if( sizes.size() > 0 ) {
-    copy(image, im); // save a copy of the delta image as a side-effect
-    return true;
-  }
-
-  else return false;
-}
-
-
-bool targetPersistsOverGap( vector<string> &names, Chunks &chunks, int i, int j, const Blob &region )
-{ 
-  static ImageType::Pointer A, B; 
-  static vector<RelabelComponentImageFilterType::ObjectSizeType> sizes;
-
-  j = (i+j)/2; 
-  
-  for (Chunk *chunk = chunks.end(); chunk != NULL; chunk = chunks.prev()) {
-    const vector<Track> &tracks = chunk->getTracks();  
-    for (i = tracks.size() - 1; i >= 0 && tracks[i].blob.Intersects(region); --i) 
-      ; 
-    if (i >= 0) {
-      i = tracks[i].index; 
-      break; 
-    }
-    else if (chunk->gapKnown()) {
-      i = chunk->getStartIndex() - 1; 
-      break;        
-    }
-    else i = 0; 
-  }
-
-  if (i > j) 
-    SWAP(i,j); 
-  
-  cout << "Try comparing " << names[i] << " with " << names[j] << endl;
-  A = read(names[i].c_str(), options); 
-  B = read(names[j].c_str(), options); 
-  Blob target = region; 
-  
-  A = delta(A, B, target);
-  A = threshold(A, options); 
-  A = morphology(A, options);
-  connectedComponents(A, sizes);
-  bool a = (sizes.size() > 0); 
-  sprintf(outname, "blob-%s-%s.jpg", names[i].c_str(), names[j].c_str());
-  write( A, outname ); 
-
-  return a;
-}
-
-
-
-int createChunks( vector<string> &names, Chunks &chunks ) 
-/** 
- * Create a list of ranges of activity
- */ 
-{
-  try 
-  {
-    int master=0, left, right, s;
-    Chunk *chunk=NULL, *prev=NULL; 
-    ImageType::Pointer im; 
-    
-    /* Output images with target bounding box drawn. */
-    bool tracking = false; 
-    Blob lastSeen;
-    char outname[128]; 
-    
-    for( int i = 1; i < names.size(); i++ ) {
-		
-      /* delta(i-1, i) */
-      if( delta( names[i], names[i-1], im ) ) {
-
-        cout << " * " << names[i] << endl;
-        prev = chunks.back();
-        if (prev) { 
-          chunk = new Chunk(prev); 
-          chunk->setStartPos( im, prev->getEndPos(), i ); 
-        } else {
-          chunk = new Chunk(); 
-          chunk->setStartPos( im, i ); 
-          chunk->gapKnown( true ); /* preceeding gap known to be empty */ 
-        }
-             
-        sprintf(outname, "tracking-%s", names[i].c_str());
-        drawBoundingBox(names[i].c_str(), outname, 
-                        chunk->getEndPos() * options.shrink_factor); 
-        
-        
-        /* range where delta != 0. left is first appearance and 
-         * right is when it disaappears */ 
-        left = i; 
-        for( i++ ; i < names.size() && delta( names[i], names[i-1], im ); i++ ) {
-          cout << " | " << names[i] << endl;
-          chunk->updateTarget( im, i ); 
-          sprintf(outname, "tracking-%s", names[i].c_str());
-          drawBoundingBox(names[i].c_str(), outname, 
-                          chunk->getEndPos() * options.shrink_factor); 
-        }
-        right = --i; 
-        chunk->setStartIndex( left ); 
-        chunk->setEndIndex( right ); 
-
-        tracking = true; 
-        lastSeen = chunk->getEndPos(); 
-
-        chunks.append( chunk ); 
-        if (prev) {
-          if (targetPersistsOverGap(names, chunks, prev->getEndIndex(), chunk->getStartIndex(), prev->getEndPos()))
-            chunks.mergeWithNext(prev);
-          else {
-            chunk->gapKnown( true ); /* preceeding gap known to be empty */ 
-          }
-        }
-       
-      }
-      else {
-        cout << "   " << names[i] << endl;
-        if (tracking) {
-          sprintf(outname, "tracking-%s", names[i].c_str());
-          drawBoundingBox(names[i].c_str(), outname, 
-                          lastSeen * options.shrink_factor); 
-        }
-      }
-    }
-   
-  }
-  
-  catch( itk::ExceptionObject & err )
-  {
-    std::cerr << "ExceptionObject caught !" << std::endl;
-    std::cerr << err << std::endl;
-    return EXIT_FAILURE;
-  }
-  return EXIT_SUCCESS; 
-}
-
-
-
-void printChunks( vector<string> &names, Chunks &chunks ) 
-{
-  int i = 0, j; 
-  cout << "\n  Here are the blobs\n";
-  for (Chunk *chunk = chunks.start(); chunk != NULL; chunk = chunks.next()) {
-    cout << "\n chunk " << ++i << endl;
-    cout << chunk->getStartPos() << endl;
-    if (chunk->getEndIndex() - chunk->getStartIndex() == 0)
-        cout << names[chunk->getEndIndex()] << endl;
-    else if (chunk->getEndIndex() - chunk->getStartIndex() <= 6) 
-      for (j = chunk->getStartIndex(); j < names.size() && j <= chunk->getEndIndex(); j++) {
-        cout << names[j] << endl;
-      }
-    else {
-        cout << names[chunk->getStartIndex()] << endl;
-        cout << names[chunk->getStartIndex()+1] << endl;
-        cout << names[chunk->getStartIndex()+2] << endl;
-        cout << "   ...\n"; 
-        cout << names[chunk->getEndIndex()-1] << endl;
-        cout << names[chunk->getEndIndex()] << endl;
-      }
-      cout << chunk->getEndPos() << endl;
-    }
-  cout << endl;
-}
-
-void printTracks( vector<string> &names, Chunks &chunks ) 
-{
-  int i = 0, j; 
-  cout << "\n  Here are the tracks\n";
-  for (Chunk *chunk = chunks.start(); chunk != NULL; chunk = chunks.next()) {
-    cout << "\n chunk " << ++i << endl;
-    const vector<Track> &tracks = chunk->getTracks();  
-    for (j = 0; j < tracks.size(); j++) {
-      cout << tracks[j].index << ' ' << names[tracks[j].index] << ' ' << tracks[j].blob << endl;
-    }
-    
-  cout << endl;
-  }
-  
-}
-
-
 int main(int argc, const char **argv) 
 {
 
@@ -262,17 +70,11 @@ int main(int argc, const char **argv)
   if (options.erode < 0) 
     die("error: must specify binary morphology factors");
 
-
   /* get file names */
   std::vector<std::string> names; 
   filenames( names, std::cin );
 
-  /* linked list of gaps */ 
-  Chunks chunks; 
-  createChunks( names, chunks ); 
-  printTracks( names, chunks ); 
+  /* TODO - the actual work. */ 
 
   return 0; 
-
 }
-
