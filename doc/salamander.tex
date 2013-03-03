@@ -1,0 +1,89 @@
+\documentclass[letter]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{tikz}
+\usepackage{ulem}
+
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks,%
+    citecolor=black,%
+    filecolor=black,%
+    linkcolor=black,%
+    urlcolor=black
+}
+
+\def\dashuline{\bgroup 
+  \ifdim\ULdepth=\maxdimen  % Set depth based on font, if not set already
+	  \settodepth\ULdepth{(j}\advance\ULdepth.4pt\fi
+  \markoverwith{\kern.15em
+	\vtop{\kern\ULdepth \hrule width .3em}%
+	\kern.15em}\ULon}
+
+\newcounter{foot}
+\setcounter{foot}{1}
+
+\author{Christopher Patton}
+\date{\today}
+\title{Salamander: computer vision for wildlife research}
+	
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This document outlines an image prcessing application called Salamander. Salamander
+is comprised of a set of algorithms for automatically detecting and tracking 
+targets of interest in a video stream. It is particularly useful for filtering 
+and segmenting video produced by field cameras for wildlife and behaviorial 
+research. 
+\end{abstract}
+
+\tableofcontents
+
+\section{Introduction}
+stuff
+
+\section{Algorithms}
+stuff
+
+\subsection{Image processing}
+delta(im1, im2) - binthresh(im) - binmorph(im)
+
+\subsection{Detection}
+connectedComponents(im). How to handle noise. 
+
+\subsection{Tracking}
+Shifting over merged blobs. 
+Multiple targets. 
+
+\subsection{Segmentation}
+Data structures. 
+Testing if gap has target. 
+ 
+\section{The Salamander toolkit}
+stuff
+
+\subsection{Build and install} 
+stuff
+
+\subsection{Usage} 
+stuff
+
+\subsubsection{\texttt{binthresh} and \texttt{binmorph}}
+stuff
+
+\subsubsection{\texttt{filter}}
+stuff
+
+\subsubsection{\texttt{detect}}
+stuff
+
+\subsubsection{\texttt{segment}}
+stuff
+
+\subsection{Processing a feed in realtime}
+stuff
+
+\section{Machine learning}
+I still need to research how and if to use this. 
+
+\end{document}
