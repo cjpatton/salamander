@@ -28,6 +28,12 @@
 #include <iostream>
 #include "blob.h"
 
+/** 
+ * struct Track - a (Blob, index) pair. This signifies that a target 
+ * appeared in the location given by the Blob at the time index. Chunks 
+ * store a list of these. 
+ */
+
 struct Track {
   Blob blob; 
   int  index; 
@@ -43,9 +49,13 @@ struct Track {
 
 
 
-/* Chunk is comprised of an index range of frames where the 
- * target is moving about. Also, calculate the start and 
- * ending position of the target (as a Blob). */ 
+/** 
+ * class Chunk - a section of video in which a target is known to be
+ * present. Store its position w.r.t. in a (Blob, index) list. If a 
+ * two adjacent chunks are known to have a target between them, their
+ * track lists will be merged. 
+ */
+
 class Chunk {
 friend std::ostream &operator<< (std::ostream &out, const Chunk &chunk);
 friend class Chunks; 
@@ -53,14 +63,19 @@ public:
 
   Chunk( Chunk *p );
   Chunk(); 
+
+  /* Preceeding gap is known to NOT contain a target. */ 
   bool gapKnown() const; 
   void gapKnown( bool k ); 
+
+  /* Time index range of chunk. */ 
   int getStartIndex() const;
   int getEndIndex() const;
   void setStartIndex( int i );
   void setEndIndex( int i );
   
-  void setStartPos( ImageType::Pointer &delta, int i );  // track target over chunk
+  /* Routines for target tracking. */ 
+  void setStartPos( ImageType::Pointer &delta, int i );  
   void setStartPos( ImageType::Pointer, const Blob &last_known_pos, int i ); 
   void updateTarget( ImageType::Pointer &delta, int i ); 
   const Blob &getStartPos() const; 
@@ -69,31 +84,42 @@ public:
 
 private: 
 
-  bool gap_known;               // is preceeding gap known to not contain a target
-  int start_index, end_index;   // range where movement is detected
-  std::vector<Track> tracks; 
-  Chunk *prev, *next; 
+  bool gap_known;               /* preceeding gap known to NOT contain a target */ 
+  int start_index, end_index;   /* time index of range of chunk */ 
+  std::vector<Track> tracks;    /* (Blob, index) list */ 
+  Chunk *prev, *next;  
 
 };
 
 std::ostream &operator<< (std::ostream &out, const Chunk &chunk);
 
-/* Linked list of chunks and gaps. This is the main data structure for 
- * representing a video stream. */ 
+
+
+/**
+ * class Chunks - a double linked list that represents segments in a video
+ * feed in which a target appears. 
+ */ 
+
 class Chunks {
 public:
 
   Chunks(); 
   ~Chunks();
   int size() const;
+
+  /* iterators, forward and backward */ 
   Chunk *start(); 
   Chunk *next();
   Chunk *prev();  
   Chunk *end(); 
   Chunk *append( Chunk *gap ); 
   Chunk *back();
-  void merge( int i, int j );
+
+  /* Gap between chunks known to contain a target, merge them. */ 
   void mergeWithNext( Chunk *chunk ); 
+
+  /* Merge an entire range. */ 
+  void merge( int i, int j ); // TODO 
 
 private:
   

@@ -26,9 +26,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
  
-
 #include "salamander.h"
-#include "chunks.h"
 #include "files.h"
 #include <iostream>
 #include <cstdlib>
