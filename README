@@ -9,13 +9,14 @@ habitats, eg. mice, rats, or salamanders.
 
 Files
 -----
-detect.cxx            -- top level program
+segment.cxx           -- current top level program. 
+detect.cxx            -- working on more sophisticated detetion scheme
 filter.cxx            -- apply filters to a series of images
-threshold.cxx         -- for collecting statistics
 binary_threshold.cxx  -- binthresh
 binary_morphology.cxx -- binmorph
 CMakeLists.txt        -- for cmake 
-salamander.[cxx/h]    -- library implementation of the image processing
+salamander.{cxx,h}    -- library implementation of the image processing
+{blob,chunk,files}.{cxx,h} -- various data structures for video segmenting
 ex                    -- some example footage for trying these programs
 
 
@@ -36,7 +37,7 @@ in the code:
 
  binthresh,
  binmorph,
- threshold,
+ segment,
  filter, and
  detect.
 
@@ -45,10 +46,7 @@ Usage
 -----
 All five programs take a list of JPEG files corresponding to a video stream
 on standard input. binmoroph and binthresh apply image processing filters 
-and output the result. threshold outputs two data files with statistical 
-information about the video stream. filter is the main program that outputs a 
-list of files in which target is captured on standard output. For example, 
-assuming you have a folder of image files, run: 
+and output the result.
 
  $ ls *.jpg > raw
  $ filter -t 20 60 -m 1 10 -s 2 < raw
@@ -59,5 +57,4 @@ the binary threshold. The other programs can be run similarly:
  
  $ binthresh 40 60 < raw
  $ binmorph 2 20 < raw
- $ threshold 2 8 40 60 < raw
 
