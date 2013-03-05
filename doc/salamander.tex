@@ -38,15 +38,76 @@ research.
 \end{abstract}
 
 \tableofcontents
+\pagebreak 
 
 \section{Introduction}
-stuff
+[TODO] Overiview of approach. Define each task: detection, tracking, and segmentaiton. 
 
 \section{Algorithms}
-stuff
+I now describe our approach to target detection and tracking in and segmentation of 
+a video stream. In essence, this is an application of computer vision in which we 
+make some basic assumptions about the video and our targets: 
+\begin{enumerate}
+  \item The camera is fixed. 
+  
+  \item The rate at which pictures are taken is fixed.\footnote{It may be necessary
+   in certain implementations to covercome this assumption. For example, a field 
+   camera may transmit its video stream over a network. The rate at which pictures 
+   are taken can be set to depend on network conditions. However, It is possible to 
+   assume a lowest-possible rate and tune Salamander accordingly.}
+
+  \item The targets are roughly the sames size and color; i.e., they are the same 
+   species (not looking for deer and mice at the same time) and roughly the same distance 
+   away from the camera when we detect them.
+\end{enumerate}
+
+The reasons for these assumptions will become apparent in this section. They are 
+necessary for the basic functionality of the algorithms we'll describe, but it may
+be possible to disregard at least (3) with machine learning. We'll explore this 
+possibility in section 4. However, we must assume (1) in any case. 
+
+Initial image processing, detection, tracking, and segmentation are layered. By this 
+we mean that in order to achieve one task, all preceeding tasks must be accomplished first. 
+We describe each layer and the corresponding algorithms and data structures in turn. 
+In the following sections, a video stream is represented by a sequence of video frames:
+$$ \langle v_0, v_1, v_2, \dots v_{n-1}, v_n \rangle $$
 
 \subsection{Image processing}
-delta(im1, im2) - binthresh(im) - binmorph(im)
+The first step in our approach is to calculate the pixelwise difference of two
+adjacent frames in a video stream. The resulting image, which we'll refer to as
+the \textit{delta} image, tells us which regions of the image changed within that 
+unit of time. We'll perfom some additional filtering, then search the image for 
+\textit{blobs}, contiguous regions of \textit{delta} that correspond to significant 
+changes. At this point, image processing is finished and we can proceed to detection. 
+
+ \textbf{delta} $\delta(v_{i-1}, v_i) \rightarrow d_i$. Input images are typically JPEG 
+format. Each pixel of a JPEG image is represented by three bytes corresponding 
+to the red, blue, and green luminance. To simplify the following steps of the 
+pipeline, we first convert $v_{i-1}$ and $v_i$ to gray scale images, whose pixels
+are floating point numbers (since we converted from bytes). Next we subtract 
+$v_{i}$ from $v_{i-1}$ and store the absolute value of each pixel. Now, all changes in 
+the frame within the time points $i-1$ to $i$ are reflected in the delta image $d_i$. 
+We can analyse these changes in order to determine if a target has appeared in frame. 
+ 
+ \textbf{binary threshold} $b(d_i) \rightarrow b_i$. The next step converts all pixels 
+to one of two values \{white, black\}, which is needed for subsequent filters. 
+This step also allows us to deal with noise artifacts related to the quality of the 
+image taken, e.g. bluriness, compressing and decompressing JPEGs, gray scale 
+filtering, etc. More to the point, if a pixel has changed just a little, we set it to 
+black; if it's changed a lot, we set it to white. For each pixel $p$ in $d_i$ and 
+threshold range $l$ and $h$ where $l < h$, 
+\[
+ b_i(p) = \left \{
+  \begin{array}{ll}
+    \textrm{white} & l \le d_i(p) \le h \\
+    \textrm{black} & \textrm{otherwise.}
+  \end{array} \right.
+\] 
+[TDOD] experiment with upper threshold higher than 255? Since floating points 
+in ImageType can be higher I'm pretty sure. 
+
+ \textbf{binary morphology} $m(b_i) \rightarrow m_i$. finally, the last filter 
+enables us to deal with real noise. [TODO] 
 
 \subsection{Detection}
 connectedComponents(im). How to handle noise. 
@@ -60,30 +121,127 @@ Data structures.
 Testing if gap has target. 
  
 \section{The Salamander toolkit}
-stuff
+Salamander is a C++ extension to the Insight Registration and Segmentation Toolkit\footnote
+{ITK is an open source product by Kitware and is available at \texttt{http://www.itk.org}.}.
+ITK provides a comprehensive array of image processing algorithms and is designed to 
+be useful in many applications. A key design feature of ITK is its support of generic programming. 
+As well as processing two-dimensional images, it can process multidimensional image and 
+mesh data, making it a successful framework for medical image analysis. This architecture 
+is extremely useful when, for example, a project must adapt and scale to new data formats. 
+However, in our computer vision application, we've restricted ourselves to two dimensinal 
+images and affectively ignore the vast majority of ITK's featurs. As a result, we encurr 
+the overhead of generic programming without gaining its benifits. 
 
-\subsection{Build and install} 
-stuff
+Therefore, it may be prudent to switch to a framework that is centered around computer 
+vision. We will consider the feasibility of using OpenCV\footnote{\texttt{http://opencv.org}.} 
+instead of ITK. OpenCV is written in C and doesn't support generic programming. As long
+as the image processing algorithms we need (pixelwise subtraction, binary thresholding and
+morphology, connected component analysis) are comparably efficient, OpenCV will be a 
+viable replacement. 
+
+Another advantage of OpenCV over ITK is that it provides a well-known means of implementing
+machine learning, something that we'll explore in future iterations of the Salamander 
+project. 
+
+\subsection{Build and install}
+Both ITK and Salamander should be built from source. ITK is available for download at 
+\texttt{http://www.itk.org/ITK/resources/software.html}. As of this writing, Salamander 
+is hosted on github at \texttt{http://www.github.com/cjpatton/ salamander}. The build 
+process for both is identical, as they use \texttt{cmake}. In the source directory, 
+under GNU/Linux: 
+\begin{verbatim}
+  $ mkdir build && cd build
+  $ cmake ../ 
+  $ make
+  $ sudo make install 
+  $ sudo ldconfig
+\end{verbatim}
+ITK has a large amount of code and will require a couple hours to finish. As always, 
+two cores can be assigned to building with \texttt{make -j 3}. 
+
+[TODO] Windows instructions.
+
+\subsection{A quick example} 
+If you've successfully installed Salamander, you can try this tutorial to see how it 
+works. In the source directory, go to \texttt{ex/three}. This footage is from an 
+experiment with mice, in which they are the choice of two environments. The goal 
+wsa to find out which they prefer. Type the following at the terminal:
+\begin{verbatim}
+  $ ls video*.jpg | segment -t 20 60 -m 1 15 
+\end{verbatim}
+The program will output the chunks of video in which a mouse appears in frame. Also,
+a series of images are produced called \texttt{tracking*.jpg}, in which \texttt{segment}
+has drawn bounding boxes around the location of the target. 
 
 \subsection{Usage} 
-stuff
+After installation, there are a number of top-level programs available. This section
+documents what they do and how to use each of them. Each Salamander program accepts a 
+list of filenames on standard input and sorts thenm alphanumerically to ensure they are 
+processed in the correct order. Except for \texttt{binthresh} and \texttt{binmorph}, 
+all of the programs have the same command line options which enable tuning of the 
+image processing parameters. These are: 
+\begin{description}
+  \item[\texttt{-t} $l, h$] Binary threshold range, where $0 \le l \le h \le 255$. Any 
+   pixel whose value falls between $l$ and $h$ become white: otherwise, black. Although
+   we can make adjustments to reduce noise here, this value should be set so that an 
+   interesting blob appears white after this stage. Therefore, a wide filter is commonly 
+   used, such as $l=20$ and $h=60$. 
+   
+  \item[\texttt{-m} $e, d$] Binary morphology factors. $e$ specifies the number of 
+   erosion iterations and $d$ specifies the number of dilation rounds. Typically, 
+   $e < d$. There are two considerations for this parameter: one, the relative size 
+   of the target, and two, the frequency of noise.
+   
+  \item[\texttt{-s} $s$] Image shrink factor, where $s > 0$. Image processing is far 
+   and away the bottleneck of Salamander. We can increase throughput by shrinking the
+   image. The trade off is that we can lose information and, potentially, miss small 
+   targets. If $s=2$, then the image is shrunk by a factor of two. Default is $s=1$ 
+   (no shrinking). 
+   
+  \item[\texttt{-f prefix}] Output file prefix. Some programs output files. 
+\end{description}
 
 \subsubsection{\texttt{binthresh} and \texttt{binmorph}}
-stuff
+These simple programs apply image processing filters to the images and output the
+result as a sequence of images. They are useful for experimenting with parameters 
+on a small set of images. \texttt{binthresh} accepts two arguments corresponding
+to the binary threshold range. If none are provided, only the image difference filter 
+is applied. \texttt{binmorph} accepts four arguments  corresponding to the morphology 
+factors and the threshold range. If two are provided, these are assumed to be the
+morphology factors and the threshold defaults to $l=20$ and $h=60$. 
+
+E.g.: \texttt{\$ ls video*.jpg | binmorph 1 10 20 60}
 
 \subsubsection{\texttt{filter}}
-stuff
+This program is functionally similar to \texttt{binmorph} except that it provides all 
+the normal tuning parameters and provides more useful information. In particular, for 
+each delta image, it outputs a list of blobs. \texttt{filter} is useful for testing 
+parameters over a large set of images. In the future, it will be modified to be useful
+for collecting statistics [IMPLEMENT].  
+
+E.g.: \texttt{\$ ls video*.jpg | filter -t 20 60 -m 20 60}
 
 \subsubsection{\texttt{detect}}
-stuff
+Currently, this program is being used to test the more advanced detection scheme 
+discussed in \texttt{2.2}. [IMPLEMENT] Once this is finished, this program will 
+simply output the images that contain targets. 
 
 \subsubsection{\texttt{segment}}
-stuff
+Currently, \texttt{segment} is the highest level program. It applies the image 
+processing filters, detects the presence of targets, tracks the target in time, 
+and outputs segments of video that contain targets. [TODO] Rename files by 
+segment number, dump to disk. Delete all files that don't appear in a chunk. 
+
+E.g.: \texttt{\$ ls video*.jpg | segment -s 3 -t 20 60 -m 20 60}
+
 
 \subsection{Processing a feed in realtime}
-stuff
+[NOT IMPLEMENTED] This feature should be implemented as a flag at the command line. 
+
+\subsection{Code documentation}
+[TODO] I hope to generate documentation with doxygen. This will be plain HTML. 
 
 \section{Machine learning}
-I still need to research how and if to use this. 
+[FUTURE] I still need to research how and if to do this. 
 
 \end{document}
