@@ -276,13 +276,14 @@ int Blob::GetBoundingBoxArea() const
 void Blob::GetRegion( ImageType::RegionType& region ) const
 /* Create ITK region from bounding box */ 
 {
+  /* FIXME check on this later, k pa ? */ 
   ImageType::IndexType index; 
-  index[0] = bbox[0]; 
-  index[1] = bbox[2]; 
+  index[0] = max(0, bbox[0]);  
+  index[1] = max(0, bbox[2]);  
 
   ImageType::SizeType size;
-  size[0] = bbox[1] - bbox[0];
-  size[1] = bbox[3] - bbox[2]; 
+  size[0] = min(frameWidth, bbox[1]) - index[0];
+  size[1] = min(frameHeight, bbox[3]) - index[1]; 
 
   region.SetIndex( index ); 
   region.SetSize( size );
