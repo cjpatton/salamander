@@ -207,6 +207,11 @@ int createChunks( vector<string> &names, Chunks &chunks )
     std::cerr << err << std::endl;
     return EXIT_FAILURE;
   }
+  catch( TrackException & err ) 
+  {
+    std::cerr << err;
+    return EXIT_FAILURE;
+  }
   return EXIT_SUCCESS; 
 }
 

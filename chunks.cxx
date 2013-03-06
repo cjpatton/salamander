@@ -25,8 +25,16 @@
 #include "salamander.h"
 #include "chunks.h"
 #include <iostream>
+#include <cstring> 
 #include <assert.h>
 
+TrackException::TrackException(const char *str) {
+  strcpy(msg, str); 
+}
+
+std::ostream &operator<<(std::ostream &out, const TrackException &err) {
+  out << "TrackException: " << err.msg << std::endl;
+}
 
 /**
  * class Chunk
@@ -88,7 +96,7 @@ void Chunk::setStartPos( ImageType::Pointer &delta, int i )
       tracks.push_back(Track(blobs[0], i)); 
       break;
                
-    default: std::cout << "I Hope this doesn't happen yet(1)\n";    
+    default: throw TrackException("too many blobs at setStartPos()");    
   }
 } // setStartPos() 
 
@@ -130,7 +138,7 @@ void Chunk::setStartPos( ImageType::Pointer delta, const Blob &last_known_pos, i
         std::cout << " shift over merged(1) " << tracks.back().blob << std::endl;
       }
       break;
-    default: std::cout << "I Hope this doesn't happen yet(2)\n";    
+    default: throw TrackException("too many blobs at setStartPos(last_known_pos)");    
   }
 } // setStartPos(lastKnown)
 
@@ -172,7 +180,7 @@ void Chunk::updateTarget( ImageType::Pointer &delta, int i )
         std::cout << " shift over merged(2) " <<  tracks.back().blob << std::endl;
       }
       break;
-    default: std::cout << "I Hope this doesn't happen yet(2)\n";    
+    default: throw TrackException("too many blobs at udpateTarget()");    
   }
 } // updateTarget()
 

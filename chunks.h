@@ -28,6 +28,19 @@
 #include <iostream>
 #include "blob.h"
 
+
+class TrackException {
+  friend std::ostream &operator<<(std::ostream &out, const TrackException &err); 
+  char msg [128]; 
+
+  public:
+    TrackException(const char *str); 
+};
+
+std::ostream &operator<<(std::ostream &out, const TrackException &err);
+
+
+
 /** 
  * struct Track - a (Blob, index) pair. This signifies that a target 
  * appeared in the location given by the Blob at the time index. Chunks 
@@ -91,7 +104,7 @@ private:
 
 };
 
-std::ostream &operator<< (std::ostream &out, const Chunk &chunk);
+std::ostream&operator<< (std::ostream &out, const Chunk &chunk);
 
 
 
