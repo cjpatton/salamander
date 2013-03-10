@@ -41,12 +41,12 @@ research.
 \pagebreak 
 
 \section{Introduction}
-[TODO] Overiview of approach. Define each task: detection, tracking, and segmentaiton. 
+[TODO] Overview of approach. Define each task: detection, tracking, and segmentaiton. 
 
 \section{Algorithms}
-I now describe our approach to target detection and tracking in and segmentation of 
-a video stream. In essence, this is an application of computer vision in which we 
-make some basic assumptions about the video and our targets: 
+I now describe our approach to target detection and tracking and segmentation of 
+the video stream. We make the following basic assumptions about the video and our
+targets:  
 \begin{enumerate}
   \item The camera is fixed. 
   
@@ -56,15 +56,18 @@ make some basic assumptions about the video and our targets:
    are taken can be set to depend on network conditions. However, It is possible to 
    assume a lowest-possible rate and tune Salamander accordingly.}
 
-  \item The targets are roughly the sames size and color; i.e., they are the same 
-   species (not looking for deer and mice at the same time) and roughly the same distance 
-   away from the camera when we detect them.
+  \item The targets are the same species, i.e., roughly the sames size and color. 
+   Under typical circumstances, its not practical to look for deer and mice 
+   simultaneously.
+  
+  \item Targets are roughly the same distance away from the camera when we detect them. 
+   
 \end{enumerate}
 
 The reasons for these assumptions will become apparent in this section. They are 
 necessary for the basic functionality of the algorithms we'll describe, but it may
-be possible to disregard at least (3) with machine learning. We'll explore this 
-possibility in section 4. However, we must assume (1) in any case. 
+be possible to disregard at (3) and (4) with machine learning. We'll explore this 
+possibility in section 3. However, we must assume (1) in any case. 
 
 Initial image processing, detection, tracking, and segmentation are layered. By this 
 we mean that in order to achieve one task, all preceeding tasks must be accomplished first. 
@@ -80,20 +83,28 @@ unit of time. We'll perfom some additional filtering, then search the image for
 \textit{blobs}, contiguous regions of \textit{delta} that correspond to significant 
 changes. At this point, image processing is finished and we can proceed to detection. 
 
+
  \textbf{delta} $\delta(v_{i-1}, v_i) \rightarrow d_i$. Input images are typically JPEG 
 format. Each pixel of a JPEG image is represented by three bytes corresponding 
 to the red, blue, and green luminance. To simplify the following steps of the 
-pipeline, we first convert $v_{i-1}$ and $v_i$ to gray scale images, whose pixels
-are floating point numbers (since we converted from bytes). Next we subtract 
+pipeline, we first convert $v_{i-1}$ and $v_i$ to gray scale images with floating point 
+precision. Next we subtract 
 $v_{i}$ from $v_{i-1}$ and store the absolute value of each pixel. Now, all changes in 
 the frame within the time points $i-1$ to $i$ are reflected in the delta image $d_i$. 
-We can analyse these changes in order to determine if a target has appeared in frame. 
+We can analyse these changes in order to determine if a target has appeared in frame.
+
+[THINK ABOUT THIS] It's true that we lose a bit of information when we apply abs 
+filter. If the target is lighter than the background, then it's old position will be 
+negative in \textit{delta} and the new position will be positive. However, the reverse
+is true if it is darker than the background. Perhaps we can remember the relative 
+darkness of the target when it first appears. 
+
  
  \textbf{binary threshold} $b(d_i) \rightarrow b_i$. The next step converts all pixels 
 to one of two values \{white, black\}, which is needed for subsequent filters. 
 This step also allows us to deal with noise artifacts related to the quality of the 
 image taken, e.g. bluriness, compressing and decompressing JPEGs, gray scale 
-filtering, etc. More to the point, if a pixel has changed just a little, we set it to 
+filtering, etc.[\textbf{ref}] More to the point, if a pixel has changed just a little, we set it to 
 black; if it's changed a lot, we set it to white. For each pixel $p$ in $d_i$ and 
 threshold range $l$ and $h$ where $l < h$, 
 \[
@@ -106,19 +117,97 @@ threshold range $l$ and $h$ where $l < h$,
 [TDOD] experiment with upper threshold higher than 255? Since floating points 
 in ImageType can be higher I'm pretty sure. 
 
+
  \textbf{binary morphology} $m(b_i) \rightarrow m_i$. finally, the last filter 
-enables us to deal with real noise. [TODO] 
+enables us to deal with physical noise. This includes things like shadows,
+small objects such as leaves or grass being blown around by the wind, and small
+insects we may not care about. Morphology has two stages: in erosion, the edges of
+artifacts in $b_i$ are worn away iteratively. Small noise artifacts will disappear 
+as a result, leaving only those that correspond to actual targets; in dilation, we 
+inflate the remaining blobs by doing the reverse of erosion. We iteratively add layers
+to the surfaces of remaining blobs. 
+Typically, many more dilation as erosion rounds are used, so that artifacts that 
+comprise a single target, i.e., those that are near to each other, will merge together.
+Binary morphology is the most computationally expensive stage of the image processing
+pipeline. Once we're done, we're ready to analyse the remaining \textit{blobs} for 
+the presence of targets. 
+
+  \textbf{connected component analysis} $c(m_i) \rightarrow \textit{Blob list}$. 
+The final image processing step allows us to disvoer the locations of blobs in 
+$m_i$ and provides some useful information about them. The connected component analysis
+algorithm, analogous to its counter-part graph theory, returns a list of connected 
+regions in the image. In the binary image $m_i$, this is simply contiguous regions
+of the same color. The black background is one such region; the rest are the blobs
+remaining after binary morphology. Let $c(m_i): \rightarrow \textit{Blob list}$ be a 
+function that performs this analysis and returns a list of blobs with the following attributes: 
+\[
+ \textit{Blob} = \left (
+  \begin{array}{ll}
+    \textit{bbox} (l,r,t,b) \texttt{ int} & \textrm{Rectangular region bounding the blob.} \\
+    \textit{centr} (x, y) \texttt{ int} &   \textrm{Coordinates of blob centroid.} \\ 
+    \textit{vol} \texttt{ int} &            \textrm{The number of pixels that comprise the blob.} \\
+    \textit{elong} \texttt{ float} &        \textrm{Elongation, the longest straight line that traverses the blob.}  
+  \end{array} \right.
+\] 
+
+The \textit{Blob.bbox} tuple gives the coordinates of the bounding box. E.g., 
+$(l,t)$ refers to the top-left corner, $(r,b)$ the bottom-right, etc. The bounding box 
+is central for our tracking methodology, The other features are used in various ways for 
+target detection, as we'll see in the next section. 
 
 \subsection{Detection}
-connectedComponents(im). How to handle noise. 
+At the moment, we employ a very simple detection strategy. We first assume that 
+one blob corresponds to a single target, i.e., all blobs comprising
+a single target have merged as a result of dilation in binary morphology. Then, if 
+any blob in \textit{delta} has a volume larger than a given threshold, we say the 
+frame contains a target: 
+\begin{tabbing}
+\textbf{func} \= \textit{detect}($V \equiv \langle v_0, v_1, v_2, \dots v_{n-1}, v_n \rangle, n$) 
+ $\rightarrow D \subset V$\\
+\> \+ $D = \emptyset$ \\
+      \textbf{for} \= $i \leftarrow 1 \textbf{ to } n$ \textbf{do}\\
+      \> \+ \textbf{for} \= \textit{blob} \textbf{in} $c(m(b(\delta(v_i, v_{i-1}))))$ \textbf{do}\\
+           \> \+ \textbf{if} \= $\textit{blob.vol} \ge \textit{thresh}$ \textbf{then}\\
+              \> \+ $D = D \quad \bigcup \quad {v_i}$\\
+                    \textbf{break}\\ 
+              \< \- \textbf{fi}\\ 
+      \< \- \textbf{done}\\ 
+     \< \- \textbf{done}\\ 
+     \textbf{return} $D$\\ 
+\< \- \textbf{end} \textit{detect}
+\end{tabbing}
+
+With small targets, e.g., mice, rats, and salamanders, this scheme has proven sufficient. 
+However, for larger targets, and for the sake of generality, a better scheme is necessary. 
+
+\subsubsection{A more sophisticated scheme}
+[THINK ABOUT THIS IN JUNE] I think a better method would be k-clustering with euclidean 
+distance. In general we've been using $e << d$ morphology factors, assuming that all 
+blobs corresponding to a target would merge as a result of dilation. In addition, we've
+assumed that all noise is squelched in the image processing pipeline. These are bad 
+assumptions in general and will break entirely with bigger targets, e.g. deer. 
+
+A better idea is to use $e = d$ and consider the distribution of blobs. Regions of dense
+blob are likely to correspond to a target in the frame, where blobs in less dense areas 
+are likely noise. We can use k-clustering (or k-centroids?) to identify groups of blobs
+that comprise a target. We then use the bounding box of all these blobs for tracking. 
+
+Of course, k-clustering for any $k$ is NP-hard, so we need to introduce a heuristic for
+[TODO] I should run some tets with the method to see how affective it is in practice. 
+
 
 \subsection{Tracking}
+
 Shifting over merged blobs. 
 Multiple targets. 
 
 \subsection{Segmentation}
 Data structures. 
 Testing if gap has target. 
+
+\section{Machine learning}
+[FUTURE] I still need to research how and if to do this. 
+
  
 \section{The Salamander toolkit}
 Salamander is a C++ extension to the Insight Registration and Segmentation Toolkit\footnote
@@ -240,8 +329,5 @@ E.g.: \texttt{\$ ls video*.jpg | segment -s 3 -t 20 60 -m 20 60}
 
 \subsection{Code documentation}
 [TODO] I hope to generate documentation with doxygen. This will be plain HTML. 
-
-\section{Machine learning}
-[FUTURE] I still need to research how and if to do this. 
 
 \end{document}
