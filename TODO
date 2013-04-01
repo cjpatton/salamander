@@ -1,25 +1,3 @@
-detect_learn. Determine good threshold value for detecting blobs. 
-
-Deal with multiple targets. 
-
-Run in realtime. 
-
-In BlobPersistsOverGap(), it would be a good idea to find the free frame that is
-temporally the closests. Currently, the algorithm starts from the lastest tracks
-and goes backwards. In the case that a suitable frame is found to the right of 
-the gap we're working on, we can search left as far as this distance to see if 
-there is a suitable frame that is closer. We then guarentee the smallest 
-temporal difference between the frames we're comparing, thus minimizing the impact
-of noise.
-
-The algorithm seems reliable for the data on hand. Do some more experiments. If 
-there are anomolies resulting from noise, I could think of a way to increase the
-erosion factor safely. 
-
-Think about multiple targets. For now, in the case that there is more than one 
-blob in delta, pick any suitable blob that is not the last known location to be
-the new target.
-
 I'm now considering switching to OpenCV. It seems to be a better known image 
 processing framework. It's WAY smaller and supposed to be more efficient since it's
 written in pure C. ITK is primarily used for medical image processing. Plus, 
