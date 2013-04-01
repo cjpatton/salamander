@@ -195,6 +195,32 @@ that comprise a target. We then use the bounding box of all these blobs for trac
 Of course, k-clustering for any $k$ is NP-hard, so we need to introduce a heuristic for
 [TODO] I should run some tets with the method to see how affective it is in practice. 
 
+\subsubsection{More brainstorming} 
+Marcel talked to me about a totally different blob detection scheme. The frame is 
+segmented into many blocks.\footnote{How to get block size?} We calculate the variance 
+within the blocks and trigger when the signal is outside of expected tolerances. 
+
+\begin{enumerate}
+\item The take-away from our conversation was that higher dimension statistics and information
+about the image must be used. Not just RGB and luminance, but hue. (Read about this.) 
+Blob Detection vs. block-based correlation.
+
+\item The bottleneck of my code in the way it works right now is binary thresholding. It'd be 
+nice to avoid this. 
+
+\item block based correlation may simplify things, but I need to research it first. 
+
+\item My method is less quantifiable. 
+
+\item If there is little color difference between the target and the background ... this is an
+issue in both cases. What information do I have? 
+\end{enumerate}
+
+I think I'll continue with my approach for now, but we must think of the data in more dimensions. 
+Block-based correlation may be useful, but I need to experiment with it before I implement it. 
+I must keep going with my current approach. But, hue vs. luminance. 
+
+My appraoch is hard to make general. This is a serious problem.  
 
 \subsection{Tracking}
 

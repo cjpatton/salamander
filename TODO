@@ -1,3 +1,9 @@
+detect_learn. Determine good threshold value for detecting blobs. 
+
+Deal with multiple targets. 
+
+Run in realtime. 
+
 In BlobPersistsOverGap(), it would be a good idea to find the free frame that is
 temporally the closests. Currently, the algorithm starts from the lastest tracks
 and goes backwards. In the case that a suitable frame is found to the right of 
