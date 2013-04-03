@@ -16,3 +16,6 @@ target_link_libraries( detect ${OpenCV_LIBS} )
 
 add_executable( cc cc.cpp )
 target_link_libraries( cc ${OpenCV_LIBS} )
+
+add_executable( boo boo.cpp )
+target_link_libraries( boo ${OpenCV_LIBS} )
