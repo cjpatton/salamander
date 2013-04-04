@@ -88,6 +88,7 @@ int main(int argc, const char **argv) {
 
 
   cv::namedWindow( "Delta", CV_WINDOW_AUTOSIZE ); 
+  cv::imwrite( "test.jpg", dilated ); 
 
   ccomp(dilated); 
   cv::imshow( "Delta", dilated );   
