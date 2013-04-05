@@ -6,82 +6,6 @@
 
 using namespace std; 
 
-/**
- * Queue of pointers! Don't Deallocate. 
- */
-
-template <class T> 
-class PointerQueue {
-public: 
-
-  PointerQueue();
-  ~PointerQueue(); 
-
-  void enqueue( T *object ); 
-
-  T   *dequeue();
-
-  T   *front() const; 
-
-  bool empty() const; 
-
-private: 
-
-  struct entry_t {
-    entry_t *next; 
-    T       *object;  
-    entry_t (T *obj, entry_t *n) {
-      object = obj; 
-      next = n; 
-    }
-  }; 
-
-  entry_t *head, *tail;
-
-}; 
-
-template <class T>
-PointerQueue<T>::PointerQueue() {
-  head = tail = NULL; 
-}
-
-template <class T>
-PointerQueue<T>::~PointerQueue() {
-  while (!empty())
-    dequeue(); 
-}
-
-template <class T>
-void PointerQueue<T>::enqueue( T *obj ) {
-  if (!head) 
-    head = tail = new entry_t(obj, NULL); 
-  else 
-    tail = tail->next = new entry_t(obj, NULL); 
-}
-
-template <class T>
-T *PointerQueue<T>::dequeue() {
-  T       *obj = head->object; 
-  entry_t *tmp = head; 
-  head = head->next; 
-  delete tmp; 
-  return obj; 
-} 
-
-template <class T>
-T *PointerQueue<T>::front() const {
-  if (head) 
-    return head->object; 
-  else 
-    return NULL; 
-}
-
-template <class T>
-bool PointerQueue<T>::empty() const {
-  return (head == NULL); 
-}
-
-
 
 
 #define min(x,y) ( x < y ? x : y )
@@ -106,22 +30,21 @@ public:
 
   void calc_blobs();  
 
+  struct component_t; 
+
   /* Disjoint-set data structure and cc matrix cell */ 
   struct label_t {
     
     label_t() {
       label = UNASSIGNED; 
-      x = y = 0; 
       parent = NULL; 
-      is_component = false; 
-      visited = false; 
+      component = NULL; 
     }
 
     uchar pixel; 
     int   label;
     label_t *parent;
-    int x, y; 
-    bool is_component, visited; 
+    component_t *component; 
   };
 
   struct component_t {
@@ -131,7 +54,6 @@ public:
       x = y = 0; 
       volume = 0; 
       centroid_x = centroid_y = 0; 
-      bbox[0] = bbox[1] = bbox[2] = bbox[3]; 
     }
 
     label_t *label; 
@@ -192,8 +114,6 @@ ConnectedComponents::ConnectedComponents( const cv::Mat &anImage )
     for (j = 0; j < ncols; ++j)
     {
       labels[i * img.cols + j].pixel = p[j];
-      labels[i * img.cols + j].x = i + j / img.cols;  /* TODO I think this is right */ 
-      labels[i * img.cols + j].y = j % img.cols; 
     }
   }
   
@@ -226,7 +146,8 @@ void ConnectedComponents::disp() const
   }
 
   for (i = 0; i < components_ct; i++) 
-    printf("%d (%d, %d)\n", components[i].label->label, components[i].x, components[i].y); 
+    printf("%d (%d, %d) vol=%d\n", components[i].label->label, 
+        components[i].x, components[i].y, components[i].volume); 
 } // disp() 
 
 
@@ -321,14 +242,20 @@ void ConnectedComponents::ccomp()
       if (q.pixel > 0)
       {
         label_t &p = _find( q );
-        if (!p.is_component) {
-          p.is_component = true; 
-          components[components_ct].x = i;
-          components[components_ct].y = j;
-          components[components_ct++].label = &p;
+        if (!p.component) {
+          p.component = &components[components_ct++]; 
+          p.component->bbox[0] = 0; 
+          p.component->bbox[1] = img.cols-1; 
+          p.component->bbox[2] = 0; 
+          p.component->bbox[3] = img.rows-1; 
+          p.component->x = i;
+          p.component->y = j;
+          p.component->label = &p;
         }
+        p.component->volume ++;
+        /* TODO bbox and centroid */ 
         q.label = p.label;
-        q.pixel = p.label;
+        q.pixel = p.label % 255; /* FIXME */ 
       }
     }
   }
