@@ -51,13 +51,11 @@ public:
 
     component_t() {
       label = NULL; 
-      x = y = 0; 
       volume = 0; 
       centroid_x = centroid_y = 0; 
     }
 
     label_t *label; 
-    int x, y;  
     int volume;
     int centroid_x, centroid_y; 
     int bbox [4];
@@ -146,8 +144,10 @@ void ConnectedComponents::disp() const
   }
 
   for (i = 0; i < components_ct; i++) 
-    printf("%d (%d, %d) vol=%d\n", components[i].label->label, 
-        components[i].x, components[i].y, components[i].volume); 
+    printf("%d (%d, %d) vol=%d bbox=[%d, %d, %d, %d]\n", components[i].label->label, 
+        components[i].centroid_x, components[i].centroid_y, components[i].volume,
+        components[i].bbox[0], components[i].bbox[1], 
+        components[i].bbox[2], components[i].bbox[3] ); 
 } // disp() 
 
 
@@ -231,9 +231,9 @@ void ConnectedComponents::ccomp()
         }
       }
     }
-  }
+}
 
-  // second pass relabel 
+  // second pass relabel and calculate blob features
   for (i = 0; i < img.rows; i++) 
   {
     for (j = 0; j < img.cols; j++) 
@@ -244,20 +244,30 @@ void ConnectedComponents::ccomp()
         label_t &p = _find( q );
         if (!p.component) {
           p.component = &components[components_ct++]; 
-          p.component->bbox[0] = 0; 
-          p.component->bbox[1] = img.cols-1; 
-          p.component->bbox[2] = 0; 
-          p.component->bbox[3] = img.rows-1; 
-          p.component->x = i;
-          p.component->y = j;
+          p.component->bbox[0] = img.cols-1; 
+          p.component->bbox[1] = 0; 
+          p.component->bbox[2] = img.rows-1; 
+          p.component->bbox[3] = 0; 
           p.component->label = &p;
         }
-        p.component->volume ++;
-        /* TODO bbox and centroid */ 
+        component_t &c = *p.component;
+        c.volume ++;
+        c.bbox[0] = min(c.bbox[0], j); 
+        c.bbox[1] = max(c.bbox[1], j); 
+        c.bbox[2] = min(c.bbox[2], i); 
+        c.bbox[3] = max(c.bbox[3], i);
+        c.centroid_x += i; 
+        c.centroid_y += j; 
         q.label = p.label;
         q.pixel = p.label % 255; /* FIXME */ 
       }
     }
+  }
+
+  // centroid calculation
+  for (i = 0; i < components_ct; i++) {
+    components[i].centroid_x /= components[i].volume; 
+    components[i].centroid_y /= components[i].volume; 
   }
   
 } // ccomp() 
