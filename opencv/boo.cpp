@@ -19,16 +19,16 @@ class ConnectedComponents
 public: 
 
   ConnectedComponents( const cv::Mat& ); 
-  
   ~ConnectedComponents(); 
   
-  void disp() const; 
-  
+  /* Write labeled image to file */ 
   void write( const char *fn ); 
 
+  /* Label image and emit a reference to it */ 
   cv::Mat &labeled(); 
 
-  void calc_blobs();  
+  /* Debugging display */ 
+  void disp() const; 
 
   struct component_t; 
 
@@ -60,6 +60,11 @@ public:
     int centroid_x, centroid_y; 
     int bbox [4];
   }; 
+  
+  /* Component accessors */ 
+  component_t &operator[] (int); 
+  const component_t &operator[] (int) const; 
+  int size() const; 
     
 private:
 
@@ -107,11 +112,11 @@ ConnectedComponents::ConnectedComponents( const cv::Mat &anImage )
   uchar* p;
   for (i = 0; i < nrows; ++i)
   {
-    label_t &q = labels[i * img.cols + j]; 
+    label_t &q = labels[i * cols + j]; 
     p = img.ptr<uchar>(i);
     for (j = 0; j < ncols; ++j)
     {
-      labels[i * img.cols + j].pixel = p[j];
+      labels[i * cols + j].pixel = p[j];
     }
   }
   
@@ -125,18 +130,36 @@ ConnectedComponents::~ConnectedComponents()
   delete [] labels;
   delete [] components;
 } // destr
+  
+/* Component accessors */ 
+ConnectedComponents::component_t &ConnectedComponents::operator[] (int i) 
+{
+  assert(i >= 0 && i < components_ct); 
+  return components[i]; 
+} // operator[]
+
+const ConnectedComponents::component_t &ConnectedComponents::operator[] (int i) const
+{
+  assert(i >= 0 && i < components_ct); 
+  return components[i]; 
+} // operator[] const 
+
+int ConnectedComponents::size() const
+{
+  return components_ct; 
+} // site()
 
 void ConnectedComponents::disp() const 
 {
   int i,j; 
   // print
-  for (i = 0; i < img.rows; i++) 
+  for (i = 0; i < rows; i++) 
   {
-    for (j = 0; j < img.cols; j++) 
+    for (j = 0; j < cols; j++) 
     { 
-      //printf("(%-1d,%-3d):", labels[i * img.cols +j].x, labels[i * img.cols + j].y); 
-      if (labels[i * img.cols +j].label != UNASSIGNED)
-        printf("%2d  ", labels[i * img.cols + j].label);
+      //printf("(%-1d,%-3d):", labels[i * cols +j].x, labels[i * cols + j].y); 
+      if (labels[i * cols +j].label != UNASSIGNED)
+        printf("%2d  ", labels[i * cols + j].label);
       else
         printf(" -  "); 
     }
@@ -153,8 +176,8 @@ void ConnectedComponents::disp() const
 
 cv::Mat& ConnectedComponents::labeled() 
 {
-  int nrows = img.rows;
-  int ncols = img.cols;
+  int nrows = rows;
+  int ncols = cols;
 
   if (img.isContinuous())
   {
@@ -166,11 +189,11 @@ cv::Mat& ConnectedComponents::labeled()
   uchar* p;
   for (i = 0; i < nrows; ++i)
   {
-    label_t &q = labels[i * img.cols + j]; 
+    label_t &q = labels[i * cols + j]; 
     p = img.ptr<uchar>(i);
     for (j = 0; j < ncols; ++j)
     {
-      p[j] = (labels[i * img.cols + j].pixel * 10) % 255; /* FIXME */ 
+      p[j] = (labels[i * cols + j].pixel * 10) % 255; /* FIXME */ 
     }
   }
   return img; 
@@ -181,13 +204,6 @@ void ConnectedComponents::write( const char *fn )
   cv::imwrite( fn, labeled() ); 
 } // write()
 
-void ConnectedComponents::calc_blobs() 
-{
-
-
-}
-
-
 
 void ConnectedComponents::ccomp() 
 {
@@ -195,11 +211,11 @@ void ConnectedComponents::ccomp()
   label_t *neighbors [8]; 
   
   // first pass label 
-  for (i = 0; i < img.rows; i++) 
+  for (i = 0; i < rows; i++) 
   {
-    for (j = 0; j < img.cols; j++) 
+    for (j = 0; j < cols; j++) 
     {
-      label_t &q = labels[i * img.cols + j]; 
+      label_t &q = labels[i * cols + j]; 
       if (q.pixel > 0)
       {
         ct = getneighbors(neighbors, i, j);
@@ -207,12 +223,6 @@ void ConnectedComponents::ccomp()
         {
           case 0: 
             q.label = label++;                // root
-            break;
-
-          case 1: 
-            q.label =  neighbors[0]->label;   // sibling
-            q.parent = neighbors[0]->parent; 
-            _union(q, *neighbors[0]); 
             break;
 
           default: 
@@ -231,22 +241,23 @@ void ConnectedComponents::ccomp()
         }
       }
     }
-}
+  }
 
   // second pass relabel and calculate blob features
-  for (i = 0; i < img.rows; i++) 
+  for (i = 0; i < rows; i++) 
   {
-    for (j = 0; j < img.cols; j++) 
+    for (j = 0; j < cols; j++) 
     {
-      label_t &q = labels[i * img.cols + j]; 
+      label_t &q = labels[i * cols + j]; 
       if (q.pixel > 0)
       {
         label_t &p = _find( q );
         if (!p.component) {
+          assert(components_ct < MAXCOMPS); 
           p.component = &components[components_ct++]; 
-          p.component->bbox[0] = img.cols-1; 
+          p.component->bbox[0] = cols-1; 
           p.component->bbox[1] = 0; 
-          p.component->bbox[2] = img.rows-1; 
+          p.component->bbox[2] = rows-1; 
           p.component->bbox[3] = 0; 
           p.component->label = &p;
         }
@@ -276,6 +287,10 @@ void ConnectedComponents::ccomp()
 
 void ConnectedComponents::_union (label_t &a, label_t &b)
 {
+
+  /* TODO This be done in O(1) if we maintain the rank of each node in the tree. 
+   * Here we must traverse to the root for each union operation. */ 
+
   label_t *A = a.parent, *B = b.parent, *prev; 
   int rankA = 0, rankB = 0; 
 
@@ -350,8 +365,18 @@ int main(int argc, const char **argv) {
   img = cv::imread( argv[1], CV_LOAD_IMAGE_GRAYSCALE ); 
   cv::threshold(img, thresh, 100, 255, CV_THRESH_BINARY); /* Threshold value doesn't matter */ 
 
-  ConnectedComponents connectedComponents( thresh ); 
-  connectedComponents.disp();
+  ConnectedComponents blobs( thresh ); 
+  for (int i = 0; i < blobs.size(); i++) {
+    ConnectedComponents::component_t &blob = blobs[i]; 
+    printf("%d (%d, %d) vol=%d bbox=[%d, %d, %d, %d]\n", blob.label->label, 
+        blob.centroid_x, blob.centroid_y, blob.volume,
+        blob.bbox[0], blob.bbox[1], 
+        blob.bbox[2], blob.bbox[3] ); 
+  }
+  blobs.write( "test.jpg" ); 
+
+
+  //connectedComponents.disp();
   //connectedComponents.write( "test.jpg" );
    
   //cv::namedWindow( "Delta", CV_WINDOW_AUTOSIZE );
