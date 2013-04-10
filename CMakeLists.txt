@@ -3,42 +3,33 @@
 # University of California, Davis
 # June 2012
 
-# This is the root ITK CMakeLists file.
-cmake_minimum_required(VERSION 2.4)
-if(COMMAND CMAKE_POLICY)
-  cmake_policy(SET CMP0003 NEW)
-endif(COMMAND CMAKE_POLICY)
-
+cmake_minimum_required(VERSION 2.8)
+find_package( OpenCV REQUIRED )
 
 # This project is designed to be built outside the Insight source tree.
 project(salamander)
 
-# Find ITK.
-find_package(ITK REQUIRED)
-include(${ITK_USE_FILE})
-
-add_executable(binmorph binary_morphology.cxx)
-add_executable(binthresh binary_threshold.cxx)
-add_executable(segment segment.cxx)
-add_executable(filter filter.cxx)
-add_executable(detect detect.cxx)
-add_executable(test test.cxx)
+#add_executable(binmorph binary_morphology.cxx)
+#add_executable(binthresh binary_threshold.cxx)
+#add_executable(segment segment.cxx)
+#add_executable(filter filter.cxx)
+#add_executable(detect detect.cxx)
+#add_executable(test test.cxx)
 add_library(salamander SHARED files.h
-                              chunks.h
-                              blob.h
                               salamander.h
                               files.cxx
-                              chunks.cxx
-                              blob.cxx
                               salamander.cxx)
-#add_executable(hi hi.cxx)
+                              #chunks.h
+                              #blob.h
+                              #chunks.cxx
+                              #blob.cxx
 
-target_link_libraries(binmorph ${ITK_LIBRARIES} salamander)
-target_link_libraries(binthresh ${ITK_LIBRARIES} salamander)
-target_link_libraries(filter ${ITK_LIBRARIES} salamander)
-target_link_libraries(segment ${ITK_LIBRARIES} salamander)
-target_link_libraries(detect ${ITK_LIBRARIES} salamander)
-target_link_libraries(test ${ITK_LIBRARIES} salamander)
+#target_link_libraries(binmorph ${OpenCV_LIBS} salamander)
+#target_link_libraries(binthresh ${OpenCV_LIBS} salamander)
+#target_link_libraries(filter ${OpenCV_LIBS} salamander)
+#target_link_libraries(segment ${OpenCV_LIBS} salamander)
+#target_link_libraries(detect ${OpenCV_LIBS} salamander)
+#target_link_libraries(test ${OpenCV_LIBS} salamander)
 
-install (TARGETS detect binmorph segment binthresh filter DESTINATION bin)
-install (TARGETS salamander DESTINATION lib)
+#install (TARGETS detect binmorph segment binthresh filter DESTINATION bin)
+#install (TARGETS salamander DESTINATION lib)
