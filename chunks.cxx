@@ -84,7 +84,7 @@ void Chunk::setEndIndex( int i )
   end_index = i; 
 } // get end_index
 
-void Chunk::setStartPos( ImageType::Pointer &delta, int i ) 
+void Chunk::setStartPos( const cv::Mat &delta, int i ) 
 /* Set start position for track list. For now, assume there is only 
  * ever one target to watch. */
 {
@@ -100,7 +100,7 @@ void Chunk::setStartPos( ImageType::Pointer &delta, int i )
   }
 } // setStartPos() 
 
-void Chunk::setStartPos( ImageType::Pointer delta, const Blob &last_known_pos, int i ) 
+void Chunk::setStartPos( const cv::Mat &delta, const Blob &last_known_pos, int i ) 
 /* Set start position for track list given a known previous starting position. 
  * for now, assume there is only ever one target to watch. */
 {
@@ -142,7 +142,7 @@ void Chunk::setStartPos( ImageType::Pointer delta, const Blob &last_known_pos, i
   }
 } // setStartPos(lastKnown)
 
-void Chunk::updateTarget( ImageType::Pointer &delta, int i ) 
+void Chunk::updateTarget( const cv::Mat &delta, int i ) 
 /* Still processing the same chunk, update track list. For now, assume there 
  * is only ever one target to watch. */
 {

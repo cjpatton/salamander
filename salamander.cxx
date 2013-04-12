@@ -24,251 +24,121 @@
 #include "salamander.h"
 #include "blob.h"
 #include "files.h"
+#include "opencv2/imgproc/imgproc.hpp"
 #include <algorithm> // sort()
 #include <cstring>
 #include <cstdlib>
 
-void delta( cv::Mat &img,
+void delta( cv::Mat &delta,
             const char *in1, 
             const char *in2, 
-            bool thresh, const param_t& )
+            bool thresh, const param_t &options )
 /* Subtract a video frame from the previous in the stream and apply
  * binary morphology filter. */
 {
-//    /* readers */
-//    Reader::Pointer reader1 = Reader::New();
-//    reader1->SetFileName( in1 );
-//   
-//    Reader::Pointer reader2 = Reader::New();
-//    reader2->SetFileName( in2 );
-//
-//    /* converters */
-//    ConverterType::Pointer conv1 = ConverterType::New(); 
-//    conv1->SetInput( reader1->GetOutput() );
-//
-//    ConverterType::Pointer conv2 = ConverterType::New(); 
-//    conv2->SetInput( reader2->GetOutput() );
-//
-//    /* shrink image filters */
-//    ShrinkImageFilterType::Pointer shrinker1 = ShrinkImageFilterType::New(); 
-//    shrinker1->SetInput( conv1->GetOutput() ); 
-//    shrinker1->SetShrinkFactor(0, options.shrink_factor); 
-//    shrinker1->SetShrinkFactor(1, options.shrink_factor);
-//    
-//    ShrinkImageFilterType::Pointer shrinker2 = ShrinkImageFilterType::New(); 
-//    shrinker2->SetInput( conv2->GetOutput() ); 
-//    shrinker2->SetShrinkFactor(0, options.shrink_factor); 
-//    shrinker2->SetShrinkFactor(1, options.shrink_factor);
-//
-//    /* subtract image from next in series */
-//    SubtractImageFilterType::Pointer subtractor = SubtractImageFilterType::New(); 
-//    subtractor->SetInput1( shrinker1->GetOutput() );
-//    subtractor->SetInput2( shrinker2->GetOutput() ); 
-//
-//    /* absolute value */
-//    AbsImageFilterType::Pointer abs = AbsImageFilterType::New();
-//    abs->SetInput( subtractor->GetOutput() );
-//    
-//    /* binary threshold filter */
-//    BinaryThresholdImageFilterType::Pointer 
-//        threshold = BinaryThresholdImageFilterType::New(); 
-//    threshold->SetInput( abs->GetOutput() );
-//    threshold->SetOutsideValue( outsideValue );
-//    threshold->SetInsideValue(  insideValue  );
-//    threshold->SetLowerThreshold( options.low );
-//    threshold->SetUpperThreshold( options.high ); 
-//
-//    if (thresh) {
-//        threshold->Update(); 
-//        return threshold->GetOutput();
-//    } else {
-//        abs->Update(); 
-//        return abs->GetOutput(); 
-//    }
+
+  /* Read files from disk */ 
+  delta = cv::imread( in1, CV_LOAD_IMAGE_GRAYSCALE ); 
+  cv::Mat &A = delta, B = cv::imread( in2, CV_LOAD_IMAGE_GRAYSCALE ); 
+
+  /* Shrink files by factor */ 
+  cv::Size size(delta.cols/options.shrink_factor, delta.rows/options.shrink_factor); 
+  cv::resize(A, A, size);
+  cv::resize(B, B, size);
+
+  /* Pixel-wise absolute difference */  
+  cv::absdiff(A, B, delta); 
+
+  if (thresh) {
+     //cv::threshold(delta, thresh, 100, 255, CV_THRESH_OTSU); /* Threshold value doesn't matter */ 
+     cv::threshold(delta, delta, options.low, 255 , CV_THRESH_BINARY); /* TODO OpenCV's binary threshold 
+                                                                          filter is less robust. I might 
+                                                                          right my own? */ 
+  }
 } // original delta() 
 
-void threshold( cv::Mat &img, const char *in, const param_t &options );
+
+void threshold( cv::Mat &img, const char *in, const param_t &options )
 /* Binary threshold. */ 
 {
-//    /* readers */
-//    Reader::Pointer reader = Reader::New();
-//    reader->SetFileName( in );
-//   
-//    /* converters */
-//    ConverterType::Pointer conv = ConverterType::New(); 
-//    conv->SetInput( reader->GetOutput() );
-//
-//    /* binary threshold filter */
-//    BinaryThresholdImageFilterType::Pointer 
-//        threshold = BinaryThresholdImageFilterType::New(); 
-//    threshold->SetInput( conv->GetOutput() );
-//    threshold->SetOutsideValue( outsideValue );
-//    threshold->SetInsideValue(  insideValue  );
-//    threshold->SetLowerThreshold( options.low );
-//    threshold->SetUpperThreshold( options.high ); 
-//
-//    /* absolute value */
-//    AbsImageFilterType::Pointer abs = AbsImageFilterType::New();
-//    abs->SetInput( threshold->GetOutput() );
-//    
-//    abs->Update();
-//    return abs->GetOutput();
+  img = cv::imread( in, CV_LOAD_IMAGE_GRAYSCALE ); 
+  cv::threshold(img, img, options.low, 255 , CV_THRESH_BINARY); /* TODO */ 
 } // threshold()
+
 
 void read( cv::Mat &img, const char *in, const param_t &options ) 
 /* Read and convert an image for the processing pipeline. */
 {
-//    Reader::Pointer reader = Reader::New();
-//    reader->SetFileName( in );
-//   
-//    ConverterType::Pointer conv = ConverterType::New(); 
-//    conv->SetInput( reader->GetOutput() );
-//
-//    /* shrink image filter */
-//    ShrinkImageFilterType::Pointer shrinker = ShrinkImageFilterType::New(); 
-//    shrinker->SetInput( conv->GetOutput() ); 
-//    shrinker->SetShrinkFactor(0, options.shrink_factor);
-//    shrinker->SetShrinkFactor(1, options.shrink_factor);
-//
-//    shrinker->Update(); 
-//    return shrinker->GetOutput(); 
+  img = cv::imread( in, CV_LOAD_IMAGE_GRAYSCALE ); 
+
+  /* Shrink file by factor */ 
+  cv::Size size(img.cols/options.shrink_factor, img.rows/options.shrink_factor); 
+  cv::resize(img, img, size);
 } // read() 
+
 
 void delta( cv::Mat &img1, const cv::Mat &img2, 
             bool thresh, const param_t &options )
 /* Subtract a video frame from prevoius in stream and apply binary threshold. */
 {
-//    /* subtract image from next in series */
-//    SubtractImageFilterType::Pointer subtractor = SubtractImageFilterType::New(); 
-//    subtractor->SetInput1( im1 );
-//    subtractor->SetInput2( im2 ); 
-//
-//    /* absolute value */
-//    AbsImageFilterType::Pointer abs = AbsImageFilterType::New();
-//    abs->SetInput( subtractor->GetOutput() );
-//    
-//    /* binary threshold filter */
-//    BinaryThresholdImageFilterType::Pointer 
-//        threshold = BinaryThresholdImageFilterType::New(); 
-//    threshold->SetInput( abs->GetOutput() );
-//    threshold->SetOutsideValue( outsideValue );
-//    threshold->SetInsideValue(  insideValue  );
-//    threshold->SetLowerThreshold( options.low );
-//    threshold->SetUpperThreshold( options.high ); 
-//
-//    if (thresh) {
-//        threshold->Update(); 
-//        return threshold->GetOutput();
-//    } else {
-//        abs->Update(); 
-//        return abs->GetOutput(); 
-    }
+  /* Pixel-wise absolute difference */  
+  cv::absdiff(img1, img2, img1); 
+
+  if (thresh) {
+     cv::threshold(img1, img1, options.low, 255 , CV_THRESH_BINARY); /* TODO */ 
+  }
 } // delata() 
+
 
 void delta( cv::Mat &img1, const cv::Mat &img2, const Blob &blob ) 
 /* Just calculate delta. */ 
 {
-//    /* Region of Interest filter */
-//    ROIFilterType::Pointer filter1 = ROIFilterType::New(), 
-//                           filter2 = ROIFilterType::New();
-//
-//    ImageType::RegionType region;
-//    blob.GetRegion( region ); 
-//
-//    filter1->SetRegionOfInterest( region ); 
-//    filter2->SetRegionOfInterest( region ); 
-//
-//    filter1->SetInput( im1 );
-//    filter2->SetInput( im2 );
-//
-//    /*filter1->Update();
-//    ImageType::Pointer poop1 = filter1->GetOutput(); 
-//    write( poop1, "apple1.jpg");
-//    filter2->Update();
-//    ImageType::Pointer poop2 = filter2->GetOutput(); 
-//    write( poop2, "apple2.jpg");*/
-//
-//    /* subtract image from next in series */
-//    SubtractImageFilterType::Pointer subtractor = SubtractImageFilterType::New(); 
-//    subtractor->SetInput1( filter1->GetOutput() );
-//    subtractor->SetInput2( filter2->GetOutput() ); 
-//    subtractor->GetOutput()->SetRequestedRegion( region ); 
-//
-//    /* absolute value */
-//    AbsImageFilterType::Pointer abs = AbsImageFilterType::New();
-//    abs->SetInput( subtractor->GetOutput() );
-//
-//    abs->Update(); 
-//    return abs->GetOutput();
+  /* TODO cropping in opencv. */
+
+  /* Pixel-wise absolute difference */  
+  //cv::absdiff(img1, img2, delta); 
+
 } // delta() 
 
 
 void threshold( cv::Mat &img, const param_t &options )
 /* Apply binary threshold filter to delta. */  
 {
-//    /* binary threshold filter */
-//    BinaryThresholdImageFilterType::Pointer 
-//        threshold = BinaryThresholdImageFilterType::New(); 
-//    threshold->SetInput( im );
-//    threshold->SetOutsideValue( outsideValue );
-//    threshold->SetInsideValue(  insideValue  );
-//    threshold->SetLowerThreshold( options.low );
-//    threshold->SetUpperThreshold( options.high ); 
-//
-//    threshold->Update(); 
-//    return threshold->GetOutput(); 
+  cv::threshold(img, img, options.low, 255 , CV_THRESH_BINARY); /* TODO */ 
 } // threshold() 
 
-void morphology( cv::Mat &img, const param_t &options ); 
+void morphology( cv::Mat &img, const param_t &options )
 /* Apply binary morphology filter to delta. Erode away weak blobs and dilate 
  * the remaining. */
 {
-//    ErodeFilterType::Pointer    erode = ErodeFilterType::New();
-//    DilateFilterType::Pointer   dilate = DilateFilterType::New();
-//  
-//    /* erode */
-//    StructuringElementType erode_element;
-//    erode_element.SetRadius( options.erode );
-//    erode_element.CreateStructuringElement();
-//    erode->SetKernel( erode_element );
-//
-//    /* dilate */
-//    StructuringElementType dilate_element;
-//    dilate_element.SetRadius( options.dilate );
-//    dilate_element.CreateStructuringElement();
-//    dilate->SetKernel( dilate_element );
-//
-//    erode->SetErodeValue( insideValue );
-//    erode->SetInput( im );  
-//
-//    dilate->SetDilateValue( insideValue );
-//    dilate->SetInput( erode->GetOutput() );
-//
-//    dilate->Update(); 
-//    return dilate->GetOutput();
+
+  /* Morphology */
+
+  int structuring_type = cv::MORPH_ELLIPSE; /* MORPH_{RECT,CROSS,ELLIPSE} */ 
+
+  cv::Mat erosion_element = cv::getStructuringElement( structuring_type,
+                             cv::Size( 2*options.erode + 1, 2*options.erode+1 ),
+                                    cv::Point( options.erode, options.erode ) );
+
+  cv::Mat dilation_element = cv::getStructuringElement( structuring_type,
+                          cv::Size( 2*options.dilate + 1, 2*options.dilate+1 ),
+                                 cv::Point( options.dilate, options.dilate ) );
+
+  cv::erode( img, img, erosion_element ); 
+  cv::dilate( img, img, dilation_element ); 
+
 } // threshold() 
 
 void copy( cv::Mat &dest, const cv::Mat &src )
 /* Duplicate an image. */ 
 {
-//  DuplicatorType::Pointer duplicator = DuplicatorType::New();
-//  duplicator->SetInputImage(im2); 
-//  duplicator->Update();
-//  im1 = duplicator->GetOutput();  
+  dest = src.clone();
 } // copy() 
 
 void write( const cv::Mat &img, const char *out )
 /* Cast an image to JPEG compatible output and write to disk. */
 {
-//    /* make sure to output in correct JPEG format */
-//    CastImageFilterType::Pointer caster = CastImageFilterType::New();
-//    caster->SetInput( im );
-//
-//    /* writer */
-//    Writer::Pointer writer = Writer::New();
-//    writer->SetInput( caster->GetOutput() );
-//    writer->SetFileName( out );
-//    writer->Update();
+  cv::imwrite( out, img ); 
 } // write() 
 
 
@@ -297,7 +167,7 @@ void write( const cv::Mat &img, const char *out )
 //} // connectedComponents() 
 
 
-int getBlobs( const cv::Mat &img, std::vector<Blob> &blobs )
+int getBlobs( const cv::Mat &img, std::vector<Blob> &blobs ) /* TODO */ 
 /* Connected component analysis, but give more information about the blobs. 
  * Return a vector of Blob objects with bounding box, centroid, volume (size), 
  * and elongation. */ 
@@ -359,7 +229,7 @@ int getBlobs( const cv::Mat &img, std::vector<Blob> &blobs )
   return 0; 
 } // getBlobs() 
 
-void drawBoundingBox( const char *in, const char *out, const Blob &blob ) 
+void drawBoundingBox( const char *in, const char *out, const Blob &blob )  /* TODO */ 
 /* Draw a bounding box on a JPEG image, as specified by a Blob object. Output
  * to a new file. */ 
 {

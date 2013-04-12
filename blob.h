@@ -54,9 +54,8 @@ public:
   /* Constructor for blobs created via connected component analysis. 
    * See salamander.cxx::getBlobs(). */ 
 
-  Blob( LabelGeometryImageFilterType::BoundingBoxType b,
-        LabelGeometryImageFilterType::LabelPointType c, double e, int v,
-        int w, int h );
+  //Blob( LabelGeometryImageFilterType::LabelPointType c, double e, int v, 
+  //      int w, int h ); 
 
   /* Accessors and modifiers for bounding box. These routines implement
    * features for tracking. */ 
@@ -75,7 +74,7 @@ public:
   /* Return an ITK type region for cropping an area in an image bounded
    * by a blob. */
    
-  void GetRegion(ImageType::RegionType &region) const; 
+  //void GetRegion(ImageType::RegionType &region) const; 
   
   /* Accessors for tracking parameters */ 
    

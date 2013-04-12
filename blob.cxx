@@ -23,6 +23,7 @@
 
 #include "salamander.h"
 #include "blob.h"
+#include <iostream>
 
 #define min(x,y) (x < y ? x : y)
 #define max(x,y) (x < y ? y : x)
@@ -45,29 +46,29 @@ Blob::Blob() {
   elongation = volume = 0; 
 } // dumb constr
 
-Blob::Blob( LabelGeometryImageFilterType::BoundingBoxType b,
-            LabelGeometryImageFilterType::LabelPointType c, 
-            double e, int v, 
-            int w, int h )
-{
-  /* bounding box corners: 
-   * (0,2) (1,2)
-   * (0,3) (1,3) */
-
-  frameWidth = w; 
-  frameHeight = h; 
-
-  bbox[0] = b[0];
-  bbox[1] = b[1];
-  bbox[2] = b[2];
-  bbox[3] = b[3];
-
-  centroidX = c[0]; 
-  centroidY = c[1];
-
-  elongation = e; 
-  volume = v;    
-} // salamander.cxx::getBlobs() constr
+//Blob::Blob( LabelGeometryImageFilterType::BoundingBoxType b,
+//            LabelGeometryImageFilterType::LabelPointType c, 
+//            double e, int v, 
+//            int w, int h )
+//{
+//  /* bounding box corners: 
+//   * (0,2) (1,2)
+//   * (0,3) (1,3) */
+//
+//  frameWidth = w; 
+//  frameHeight = h; 
+//
+//  bbox[0] = b[0];
+//  bbox[1] = b[1];
+//  bbox[2] = b[2];
+//  bbox[3] = b[3];
+//
+//  centroidX = c[0]; 
+//  centroidY = c[1];
+//
+//  elongation = e; 
+//  volume = v;    
+//} // salamander.cxx::getBlobs() constr
 
 Blob::Blob( int top, int right, int bottom, int left ) 
 {
@@ -273,21 +274,21 @@ int Blob::GetBoundingBoxArea() const
 
 
 
-void Blob::GetRegion( ImageType::RegionType& region ) const
-/* Create ITK region from bounding box */ 
-{
-  /* FIXME check on this later, k pa ? */ 
-  ImageType::IndexType index; 
-  index[0] = max(0, bbox[0]);  
-  index[1] = max(0, bbox[2]);  
-
-  ImageType::SizeType size;
-  size[0] = min(frameWidth, bbox[1]) - index[0];
-  size[1] = min(frameHeight, bbox[3]) - index[1]; 
-
-  region.SetIndex( index ); 
-  region.SetSize( size );
-} // GetRegion()
+//void Blob::GetRegion( ImageType::RegionType& region ) const
+///* Create ITK region from bounding box */ 
+//{
+//  /* FIXME check on this later, k pa ? */ 
+//  ImageType::IndexType index; 
+//  index[0] = max(0, bbox[0]);  
+//  index[1] = max(0, bbox[2]);  
+//
+//  ImageType::SizeType size;
+//  size[0] = min(frameWidth, bbox[1]) - index[0];
+//  size[1] = min(frameHeight, bbox[3]) - index[1]; 
+//
+//  region.SetIndex( index ); 
+//  region.SetSize( size );
+//} // GetRegion()
 
 
 

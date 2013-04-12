@@ -21,11 +21,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-
-
 #include "salamander.h"
 #include "files.h"
+#include "opencv2/imgproc/imgproc.hpp"
+#include "opencv2/highgui/highgui.hpp"
+#include "highgui.h"
+
+#include <iostream>
 
 int main(int argc, const char **argv) 
 {
@@ -64,22 +66,23 @@ int main(int argc, const char **argv)
     std::vector<std::string> names; 
     filenames( names, std::cin );
     char outname [256];
-    ImageType::Pointer im;        
+    cv::Mat im;        
 
     try 
     {
         for( i = 1; i < names.size(); i ++ ) {
             sprintf(outname, "binmorph%d.jpg", i);
-            im = delta(names[i-1].c_str(), names[i].c_str(), true, options);
-            im = morphology( im, options );
+            delta(im, names[i-1].c_str(), names[i].c_str(), true, options);
+            morphology( im, options );
             write( im, outname );
         }
     }
 
-    catch( itk::ExceptionObject & err )
+    catch( cv::Exception &e )
     {
-        std::cerr << "ExceptionObject caught !" << std::endl;
-        std::cerr << err << std::endl;
+        std::cerr << "-- Exception ------\n" 
+                  << e.what() << std::endl
+                  << "-------------------\n";
         return EXIT_FAILURE;
     }
 }

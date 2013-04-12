@@ -88,9 +88,9 @@ public:
   void setEndIndex( int i );
   
   /* Routines for target tracking. */ 
-  void setStartPos( ImageType::Pointer &delta, int i );  
-  void setStartPos( ImageType::Pointer, const Blob &last_known_pos, int i ); 
-  void updateTarget( ImageType::Pointer &delta, int i ); 
+  void setStartPos( const cv::Mat &delta, int i );  
+  void setStartPos( const cv::Mat&, const Blob &last_known_pos, int i ); 
+  void updateTarget( const cv::Mat &delta, int i ); 
   const Blob &getStartPos() const; 
   const Blob &getEndPos() const; 
   const std::vector<Track>& getTracks() const; 
