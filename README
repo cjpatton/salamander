@@ -22,9 +22,7 @@ ex                    -- some example footage for trying these programs
 
 Installation
 ------------
-This code is written in C++ for the Insight Segmentation and Restoration 
-Toolkit (ITK). Information about ITK can be found at www.itk.org. You will need
-it and cmake installed to build the code. 
+This code is written in C++ for OpenCV (opencv.org).
 
  $ mkdir build && cd build
  $ cmake ../

@@ -27,6 +27,7 @@
 #include "blob.h"
 #include "files.h"
 #include <cstdio> //sprintf()
+#include <iostream>
 using namespace std;
 
 const char *help = 
@@ -59,8 +60,7 @@ int main(int argc, const char **argv)
     std::vector<std::string> names; 
     filenames( names, std::cin );
 
-    ImageType::Pointer im;
-    std::vector<RelabelComponentImageFilterType::ObjectSizeType> sizes;
+    cv::Mat im;
     std::vector<Blob> blobs; 
 
     char outname[256]; 
@@ -70,8 +70,8 @@ int main(int argc, const char **argv)
     {
         for( i = 1; i < names.size(); i ++ ) {
             cout << names[i-1] << ' ' << names[i] << endl;
-            im = delta(names[i].c_str(), names[i-1].c_str(), true, options );
-            im = morphology( im, options );
+            delta(im, names[i].c_str(), names[i-1].c_str(), true, options );
+            morphology( im, options );
             getBlobs( im, blobs ); 
 
             sprintf(outname, "%s-%s-%s.jpg", options.prefix, names[i-1].c_str(), names[i].c_str()); 
@@ -83,10 +83,11 @@ int main(int argc, const char **argv)
         }
     }
 
-    catch( itk::ExceptionObject & err )
+    catch( cv::Exception &e )
     {
-        std::cerr << "ExceptionObject caught !" << std::endl;
-        std::cerr << err << std::endl;
+        std::cerr << "-- Exception ------\n" 
+                  << e.what() << std::endl
+                  << "-------------------\n";
         return EXIT_FAILURE;
     }
 }
