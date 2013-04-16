@@ -24,6 +24,7 @@ add_library(salamander SHARED files.h
                               chunks.cxx
                               blob.cxx)
 
+target_link_libraries(salamander ${OpenCV_LIBS})
 target_link_libraries(binmorph ${OpenCV_LIBS} salamander)
 target_link_libraries(binthresh ${OpenCV_LIBS} salamander)
 #target_link_libraries(filter ${OpenCV_LIBS} salamander)
@@ -33,3 +34,4 @@ target_link_libraries(binthresh ${OpenCV_LIBS} salamander)
 
 #install (TARGETS detect binmorph segment binthresh filter DESTINATION bin)
 install (TARGETS salamander DESTINATION lib)
+install (TARGETS binmorph binthresh DESTINATION bin)

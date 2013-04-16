@@ -24,6 +24,7 @@
 
 #include "salamander.h"
 #include "files.h"
+#include <iostream>
 
 int main(int argc, const char **argv) 
 {
@@ -58,15 +59,17 @@ int main(int argc, const char **argv)
     {
         for( i = 1; i < names.size(); i ++ ) {
             sprintf(outname, "binthresh%d.jpg", i);
-            ImageType::Pointer im = delta(names[i-1].c_str(), names[i].c_str(), threshold, options);
+            cv::Mat im;
+            delta(im, names[i-1].c_str(), names[i].c_str(), threshold, options);
             write( im, outname );
         }
     }
 
-    catch( itk::ExceptionObject & err )
+    catch( cv::Exception &e )
     {
-        std::cerr << "ExceptionObject caught !" << std::endl;
-        std::cerr << err << std::endl;
+        std::cerr << "-- Exception ------\n" 
+                  << e.what() << std::endl
+                  << "-------------------\n";
         return EXIT_FAILURE;
     }
 }
