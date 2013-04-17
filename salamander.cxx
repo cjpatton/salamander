@@ -93,10 +93,13 @@ void delta( cv::Mat &img1, const cv::Mat &img2,
 void delta( cv::Mat &img1, const cv::Mat &img2, const Blob &blob ) 
 /* Just calculate delta. */ 
 {
-  /* TODO cropping in opencv. */
 
-  /* Pixel-wise absolute difference */  
-  //cv::absdiff(img1, img2, delta); 
+  /* Set region of interest */
+  cv::Mat A = img1(blob.GetRegion());
+  cv::Mat B = img2(blob.GetRegion());
+  
+  /* Pixel-wise absolute differeince */  
+  cv::absdiff(A, B, img1); 
 
 } // delta() 
 
@@ -104,7 +107,7 @@ void delta( cv::Mat &img1, const cv::Mat &img2, const Blob &blob )
 void threshold( cv::Mat &img, const param_t &options )
 /* Apply binary threshold filter to delta. */  
 {
-  cv::threshold(img, img, options.low, 255 , CV_THRESH_BINARY); /* TODO */ 
+  cv::threshold(img, img, options.low, 255 , CV_THRESH_BINARY); /* TODO threshold range */ 
 } // threshold() 
 
 void morphology( cv::Mat &img, const param_t &options )
@@ -142,29 +145,15 @@ void write( const cv::Mat &img, const char *out )
 } // write() 
 
 
-//void connectedComponents(  FIXME
-// ImageType::Pointer &im, 
-// std::vector<RelabelComponentImageFilterType::ObjectSizeType> &sizes ) 
-///* Simple (fast) connected component anaylysis. Return a vector of blob sizes. */ 
-//{
-//    sizes.clear(); 
-//  
-//    /* make sure to output in correct JPEG format */
-//    CastImageFilterType::Pointer caster = CastImageFilterType::New();
-//    caster->SetInput( im ); 
-//
-//    /* connected components */
-//    ConnectedComponentImageFilterType::Pointer
-//        components = ConnectedComponentImageFilterType::New();
-//    components->SetInput( caster->GetOutput() );
-//
-//    RelabelComponentImageFilterType::Pointer
-//        relabel = RelabelComponentImageFilterType::New(); 
-//    relabel->SetInput( components->GetOutput() ); 
-//    relabel->Update();
-//
-//    sizes = relabel->GetSizeOfObjectsInPixels(); 
-//} // connectedComponents() 
+void connectedComponents( 
+ cv::Mat &im, 
+ std::vector<Blob> &sizes ) 
+{
+    sizes.clear(); 
+    ConnectedComponents cc( im ); 
+    for (int i = 0; i < cc.size(); i++) 
+      sizes.push_back(cc[i]);
+} // connectedComponents() 
 
 
 int getBlobs( const cv::Mat &img, std::vector<Blob> &blobs ) /* TODO */ 
@@ -172,61 +161,11 @@ int getBlobs( const cv::Mat &img, std::vector<Blob> &blobs ) /* TODO */
  * Return a vector of Blob objects with bounding box, centroid, volume (size), 
  * and elongation. */ 
 {
-//  int i; 
-//  
-//  CastImageFilterType::Pointer caster = CastImageFilterType::New();
-//  caster->SetInput( im ); 
-//  
-//  BinaryImageToLabelMapFilterType::Pointer labelMap = 
-//                                   BinaryImageToLabelMapFilterType::New(); 
-//  labelMap->SetInput( caster->GetOutput() ); 
-//  labelMap->Update(); 
-//
-//  LabelMapToLabelImageFilterType::Pointer labelImage = 
-//                                    LabelMapToLabelImageFilterType::New();
-//  labelImage->SetInput( labelMap->GetOutput() );
-//  labelImage->Update(); 
-//
-//  LabelGeometryImageFilterType::Pointer geo = 
-//                                      LabelGeometryImageFilterType::New(); 
-//  geo->SetInput( labelImage->GetOutput() ); 
-//
-//  // These generate optional outputs.
-//  //geo->CalculatePixelIndicesOn();
-//  //geo->CalculateOrientedBoundingBoxOn();
-//  //geo->CalculateOrientedLabelRegionsOn();
-// 
-//  geo->Update();
-// 
-//  LabelGeometryImageFilterType::LabelsType allLabels = geo->GetLabels();
-//  LabelGeometryImageFilterType::LabelsType::iterator allLabelsIt;
-//  //std::cout << "Number of labels: " << geo->GetNumberOfLabels() << std::endl;
-// 
-//  blobs.clear(); 
-//  for( allLabelsIt = allLabels.begin()+1; allLabelsIt != allLabels.end(); allLabelsIt++ )
-//  {
-//    LabelGeometryImageFilterType::LabelPixelType labelValue = *allLabelsIt;
-//    //std::cout << "\tVolume: " << geo->GetVolume(labelValue) << std::endl;
-//    //std::cout << "\tIntegrated Intensity: " << geo->GetIntegratedIntensity(labelValue) << std::endl;
-//    //std::cout << "\tCentroid: " << geo->GetCentroid(labelValue) << std::endl;
-//    //std::cout << "\tWeighted Centroid: " << geo->GetWeightedCentroid(labelValue) << std::endl;
-//    //std::cout << "\tAxes Length: " << geo->GetAxesLength(labelValue) << std::endl;
-//    //std::cout << "\tMajorAxisLength: " << geo->GetMajorAxisLength(labelValue) << std::endl;
-//    //std::cout << "\tMinorAxisLength: " << geo->GetMinorAxisLength(labelValue) << std::endl;
-//    //std::cout << "\tEccentricity: " << geo->GetEccentricity(labelValue) << std::endl;
-//    //std::cout << "\tElongation: " << geo->GetElongation(labelValue) << std::endl;
-//    //std::cout << "\tOrientation: " << geo->GetOrientation(labelValue) << std::endl;
-//    //std::cout << "\tBounding box: " << geo->GetBoundingBox(labelValue) << std::endl;
-//    blobs.push_back( Blob(geo->GetBoundingBox(labelValue), 
-//                     geo->GetCentroid(labelValue),
-//                     geo->GetElongation(labelValue),
-//                     geo->GetVolume(labelValue),
-//                     im->GetLargestPossibleRegion().GetSize()[0],
-//                     im->GetLargestPossibleRegion().GetSize()[1]) ); 
-//  }
-//
-//  return blobs.size(); 
-  return 0; 
+  blobs.clear(); 
+  ConnectedComponents cc( img ); 
+  for (int i = 0; i < cc.size(); i++) 
+    blobs.push_back(cc[i]);
+  return blobs.size();
 } // getBlobs() 
 
 void drawBoundingBox( const char *in, const char *out, const Blob &blob )  /* TODO */ 

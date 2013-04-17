@@ -26,9 +26,14 @@
 #define BLOB_H
 
 #include "salamander.h"
+#define UNASSIGNED -1
+#define MAXCOMPS 1024
+
+class ConnectedComponents; 
 
 class Blob {
 friend std::ostream& operator<< (std::ostream&, const Blob&); 
+friend class ConnectedComponents; 
 
   /* Bounding box is used for tracking targets. */
   
@@ -39,8 +44,7 @@ friend std::ostream& operator<< (std::ostream&, const Blob&);
    * sophisticated detection techniques, e.g., when many blobs correspond
    * to one large target. */
 
-  int centroidX, centroidY;    
-  double elongation; 
+  int centroid_x, centroid_y;    
   int volume; 
 
   bool containsPoint(int x, int y) const; 
@@ -74,18 +78,86 @@ public:
   /* Return an ITK type region for cropping an area in an image bounded
    * by a blob. */
    
-  //void GetRegion(ImageType::RegionType &region) const; 
+  cv::Rect GetRegion() const; 
   
   /* Accessors for tracking parameters */ 
    
   int DistanceTo( const Blob &blob ) const;
   int GetCentroidX() const; 
   int GetCentroidY() const; 
-  double GetElongation () const; 
   int GetVolume() const; 
   
 }; 
 
 std::ostream& operator<< (std::ostream &out, const Blob &blob); 
 
+
+class ConnectedComponents
+{
+
+public: 
+
+  ConnectedComponents( const cv::Mat& ); 
+  ~ConnectedComponents(); 
+  
+  /* Write labeled image to file */ 
+  void write( const char *fn ); 
+
+  /* Label image and emit a reference to it */ 
+  cv::Mat &labeled(); 
+
+  /* Debugging display */ 
+  void disp() const; 
+
+  struct component_t; 
+
+  /* Disjoint-set data structure and cc matrix cell */ 
+  struct label_t {
+    
+    label_t() {
+      label = UNASSIGNED; 
+      parent = NULL; 
+      component = NULL; 
+    }
+
+    uchar pixel; 
+    int   label;
+    label_t *parent;
+    component_t *component; 
+  };
+
+  struct component_t {
+
+    component_t() {
+      label = NULL; 
+      blob.volume = 0; 
+      blob.centroid_x = blob.centroid_y = 0; 
+    }
+
+    label_t *label; 
+    Blob blob; 
+  }; 
+  
+  /* Component accessors */ 
+  Blob &operator[] (int); 
+  const Blob &operator[] (int) const; 
+  int size() const; 
+    
+private:
+
+  /* Disjoint-set methods */
+  void      _union (label_t &a, label_t &b);
+  label_t & _find (label_t &a) const; 
+    
+  /* Connected component analysis */ 
+  int getneighbors(label_t* neighbors [], int i, int j);
+  void ccomp();
+  
+  label_t     *labels; 
+  component_t *components; 
+  int rows, cols, components_ct; 
+  
+  cv::Mat img; 
+   
+}; // class ConnectedComponents
 #endif // BLOB_H

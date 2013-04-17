@@ -28,11 +28,8 @@
 #define min(x,y) (x < y ? x : y)
 #define max(x,y) (x < y ? y : x)
 
-bool Blob::containsPoint( int x, int y ) const 
-/* Bounding box contains point (x,y) */
-{
-  return (x >= bbox[0] && x <= bbox[1] && y >= bbox[2] && y <= bbox[3]);  
-} // containsPoint() 
+
+
 
 
 
@@ -42,8 +39,8 @@ Blob::Blob() {
   bbox[1] = 0;
   bbox[2] = 0;
   bbox[3] = 0;
-  centroidX = centroidY = 0; 
-  elongation = volume = 0; 
+  centroid_x = centroid_y = 0; 
+  volume = 0; 
 } // dumb constr
 
 //Blob::Blob( LabelGeometryImageFilterType::BoundingBoxType b,
@@ -78,8 +75,8 @@ Blob::Blob( int top, int right, int bottom, int left )
   bbox[2] = bottom;
   bbox[3] = left;
   
-  centroidX = centroidY = 0; 
-  elongation = volume = 0; 
+  centroid_x = centroid_y = 0; 
+  volume = 0; 
 } // bounding box constr
 
 
@@ -109,10 +106,8 @@ Blob& Blob::operator=(const Blob &blob)
   bbox[2] = blob.bbox[2];
   bbox[3] = blob.bbox[3];
 
-  centroidX = blob.centroidX; 
-  centroidY = blob.centroidY;
-
-  elongation = blob.elongation; 
+  centroid_x = blob.centroid_x; 
+  centroid_y = blob.centroid_y;
 
   volume = blob.volume;    
   return *this; 
@@ -274,53 +269,39 @@ int Blob::GetBoundingBoxArea() const
 
 
 
-//void Blob::GetRegion( ImageType::RegionType& region ) const
+cv::Rect Blob::GetRegion() const
 ///* Create ITK region from bounding box */ 
-//{
-//  /* FIXME check on this later, k pa ? */ 
-//  ImageType::IndexType index; 
-//  index[0] = max(0, bbox[0]);  
-//  index[1] = max(0, bbox[2]);  
-//
-//  ImageType::SizeType size;
-//  size[0] = min(frameWidth, bbox[1]) - index[0];
-//  size[1] = min(frameHeight, bbox[3]) - index[1]; 
-//
-//  region.SetIndex( index ); 
-//  region.SetSize( size );
-//} // GetRegion()
+{
+   /* top left (0,2) (1,2)
+    *          (0,3) (1,3) bottom right */
+
+  return cv::Rect(bbox[0], bbox[2], bbox[1] - bbox[0], bbox[3] - bbox[2]); 
+
+} // GetRegion()
 
 
 
 int Blob::DistanceTo( const Blob &blob ) const 
 /* Euclidean distance between blob centroids */ 
 {
-  return sqrt(pow(blob.centroidY - centroidY, 2) + 
-                              pow(blob.centroidX - centroidX, 2));
+  return sqrt(pow(blob.centroid_y - centroid_y, 2) + 
+                              pow(blob.centroid_x - centroid_x, 2));
 } // DistanceTo() 
 
 int Blob::GetCentroidX() const 
 {
-  return centroidX; 
+  return centroid_x; 
 } // GetCentroidX()
 
 int Blob::GetCentroidY() const 
 {
-  return centroidY; 
+  return centroid_y; 
 } // GetCentroidY() 
-
-double Blob::GetElongation () const 
-{
-  return elongation; 
-} // GetElongation() 
 
 int Blob::GetVolume() const 
 {
   return volume; 
 } // GetVolume()
-
-
-
 
 std::ostream& operator<< (std::ostream &out, const Blob &blob) 
 {
@@ -330,4 +311,280 @@ std::ostream& operator<< (std::ostream &out, const Blob &blob)
       << ", " << blob.bbox[2] << ", " << blob.bbox[3] << "]";
   return out; 
 } // operator<<
+
+bool Blob::containsPoint( int x, int y ) const 
+/* Bounding box contains point (x,y) */
+{
+  return (x >= bbox[0] && x <= bbox[1] && y >= bbox[2] && y <= bbox[3]);  
+} // containsPoint() 
+
+
+
+
+ConnectedComponents::ConnectedComponents( const cv::Mat &anImage )
+{
+  CV_Assert(anImage.depth() == CV_8U);  // accept only uchar images
+  CV_Assert(anImage.channels() == 1);   // just one channel
+
+  img = anImage.clone();
+  rows = img.rows; 
+  cols = img.cols;
+  components_ct = 0; 
+  
+  labels = new label_t [rows * cols]; 
+  components = new component_t [MAXCOMPS]; 
+
+  int nrows = img.rows;
+  int ncols = img.cols;
+
+  if (img.isContinuous())
+  {
+    ncols *= nrows;
+    nrows = 1;
+  }
+
+  // populate label matrix
+  int i, j, ct, label = 0; 
+  uchar* p;
+  for (i = 0; i < nrows; ++i)
+  {
+    label_t &q = labels[i * cols + j]; 
+    p = img.ptr<uchar>(i);
+    for (j = 0; j < ncols; ++j)
+    {
+      labels[i * cols + j].pixel = p[j];
+    }
+  }
+  
+  // perform connected component analysis
+  ccomp(); 
+  
+} // constr
+
+ConnectedComponents::~ConnectedComponents() 
+{
+  delete [] labels;
+  delete [] components;
+} // destr
+  
+/* Component accessors */ 
+Blob &ConnectedComponents::operator[] (int i) 
+{
+  assert(i >= 0 && i < components_ct); 
+  return components[i].blob; 
+} // operator[]
+
+const Blob &ConnectedComponents::operator[] (int i) const
+{
+  assert(i >= 0 && i < components_ct); 
+  return components[i].blob; 
+} // operator[] const 
+
+int ConnectedComponents::size() const
+{
+  return components_ct; 
+} // site()
+
+void ConnectedComponents::disp() const 
+{
+  int i,j; 
+  // print
+  for (i = 0; i < rows; i++) 
+  {
+    for (j = 0; j < cols; j++) 
+    { 
+      //printf("(%-1d,%-3d):", labels[i * cols +j].x, labels[i * cols + j].y); 
+      if (labels[i * cols +j].label != UNASSIGNED)
+        printf("%2d  ", labels[i * cols + j].label);
+      else
+        printf(" -  "); 
+    }
+    printf("\n"); 
+  }
+
+  for (i = 0; i < components_ct; i++) 
+    printf("%d (%d, %d) vol=%d blob.bbox=[%d, %d, %d, %d]\n", components[i].label->label, 
+        components[i].blob.centroid_x, components[i].blob.centroid_y, components[i].blob.volume,
+        components[i].blob.bbox[0], components[i].blob.bbox[1], 
+        components[i].blob.bbox[2], components[i].blob.bbox[3] ); 
+} // disp() 
+
+
+cv::Mat& ConnectedComponents::labeled() 
+{
+  int nrows = rows;
+  int ncols = cols;
+
+  if (img.isContinuous())
+  {
+    ncols *= nrows;
+    nrows = 1;
+  }
+  int i, j, ct, label = 0; 
+
+  uchar* p;
+  for (i = 0; i < nrows; ++i)
+  {
+    label_t &q = labels[i * cols + j]; 
+    p = img.ptr<uchar>(i);
+    for (j = 0; j < ncols; ++j)
+    {
+      p[j] = (labels[i * cols + j].pixel * 10) % 255; /* FIXME */ 
+    }
+  }
+  return img; 
+} // labeled() 
+
+void ConnectedComponents::write( const char *fn ) 
+{
+  cv::imwrite( fn, labeled() ); 
+} // write()
+
+
+void ConnectedComponents::ccomp() 
+{
+  int i, j, ct, label = 0; 
+  label_t *neighbors [8]; 
+  
+  // first pass label 
+  for (i = 0; i < rows; i++) 
+  {
+    for (j = 0; j < cols; j++) 
+    {
+      label_t &q = labels[i * cols + j]; 
+      if (q.pixel > 0)
+      {
+        ct = getneighbors(neighbors, i, j);
+        switch(ct) 
+        {
+          case 0: 
+            q.label = label++;                // root
+            break;
+
+          default: 
+            label_t *min = neighbors[0]; 
+            for (int k = 1; k < ct; k++) 
+            {
+              if (neighbors[k]->label < min->label)
+                min = neighbors[k]; 
+            }
+            q.label  = min->label;             // sibling of min label
+            q.parent = min->parent; 
+
+            for (int k = 0; k < ct; k++)       // neighbors are in the same group
+              _union(q, *neighbors[k]); 
+
+        }
+      }
+    }
+  }
+
+  // second pass relabel and calculate blob features
+  for (i = 0; i < rows; i++) 
+  {
+    for (j = 0; j < cols; j++) 
+    {
+      label_t &q = labels[i * cols + j]; 
+      if (q.pixel > 0)
+      {
+        label_t &p = _find( q );
+        if (!p.component) {
+          assert(components_ct < MAXCOMPS); 
+          p.component = &components[components_ct++]; 
+          p.component->blob.bbox[0] = cols-1; 
+          p.component->blob.bbox[1] = 0; 
+          p.component->blob.bbox[2] = rows-1; 
+          p.component->blob.bbox[3] = 0; 
+          p.component->label = &p;
+        }
+        component_t &c = *p.component;
+        c.blob.volume ++;
+        c.blob.bbox[0] = min(c.blob.bbox[0], j); 
+        c.blob.bbox[1] = max(c.blob.bbox[1], j); 
+        c.blob.bbox[2] = min(c.blob.bbox[2], i); 
+        c.blob.bbox[3] = max(c.blob.bbox[3], i);
+        c.blob.centroid_x += i; 
+        c.blob.centroid_y += j; 
+        q.label = p.label;
+        q.pixel = p.label % 255; /* FIXME */ 
+      }
+    }
+  }
+
+  // centroid calculation
+  for (i = 0; i < components_ct; i++) {
+    components[i].blob.centroid_x /= components[i].blob.volume; 
+    components[i].blob.centroid_y /= components[i].blob.volume; 
+  }
+  
+} // ccomp() 
+
+
+
+void ConnectedComponents::_union (label_t &a, label_t &b)
+{
+
+  /* TODO This be done in O(1) if we maintain the rank of each node in the tree. 
+   * Here we must traverse to the root for each union operation. */ 
+
+  label_t *A = a.parent, *B = b.parent, *prev; 
+  int rankA = 0, rankB = 0; 
+
+  prev = &a; 
+  while (A) {
+    prev = A; 
+    A = A->parent; 
+    rankA ++; 
+  }
+  A = prev;
+  
+  prev = &b; 
+  while (B) {
+    prev = B; 
+    B = B->parent; 
+    rankB ++; 
+  }
+  B = prev;
+  
+  if (A != B)
+  {
+    if (rankA < rankB) 
+      A->parent = B; 
+  
+    else
+      B->parent = A; 
+  }
+} // _union()
+
+ConnectedComponents::label_t &ConnectedComponents::_find (label_t &a) const
+{
+  label_t *A = a.parent, *prev; 
+  prev = &a; 
+  while (A) {
+    prev = A;
+    A = A->parent; 
+  }
+  A = prev; 
+  return *A;  
+} // _find()
+
+int ConnectedComponents::getneighbors(label_t* neighbors [], int i, int j) 
+{
+  int ct = 0;
+
+  //printf("(%d, %d) ", i, j); 
+  for (int x = max(0, i-1); x <= min(i+1, rows-1); x++)
+  {
+    for (int y = max(0, j-1); y <= min(j+1, cols-1); y++)
+    {
+      if (labels[x * cols + y].label != UNASSIGNED) {
+        //cout << labels[x * cols + y].label << ' '; 
+        neighbors[ct++] = &labels[x * cols + y];
+      }
+    }
+  }
+  //cout << endl;
+  
+  return ct; 
+} // getneighbors()
 

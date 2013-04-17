@@ -8,7 +8,7 @@
  *
  * TODO 
  *  - Testing. 
- *  - Tename segments containing targets and save them. 
+ *  - Rename segments containing targets and save them. 
  * 
  * Copyright (C) 2013 Christopher Patton 
  *
@@ -59,13 +59,13 @@ param_t options; // threshold/morphology options
 char outname [256]; 
 int  outname_index = 0; 
 
-bool delta( string &img1, string &img2, ImageType::Pointer &image, bool writeout=false ) 
+bool delta( string &img1, string &img2, cv::Mat &image, bool writeout=false ) 
 {
-  static ImageType::Pointer im;
-  static vector<RelabelComponentImageFilterType::ObjectSizeType> sizes;
+  cv::Mat im;
+  static vector<Blob> sizes;
 
-  im = delta( img1.c_str(), img2.c_str(), true, options );
-  im = morphology( im, options  );
+  delta(im, img1.c_str(), img2.c_str(), true, options );
+  morphology( im, options  );
   connectedComponents( im, sizes );
   if (writeout) {
     sprintf(outname, "%s%d.jpg", options.prefix, outname_index++);
@@ -84,8 +84,8 @@ bool delta( string &img1, string &img2, ImageType::Pointer &image, bool writeout
 
 bool targetPersistsOverGap( vector<string> &names, Chunks &chunks, int i, int j, const Blob &region )
 { 
-  static ImageType::Pointer A, B; 
-  static vector<RelabelComponentImageFilterType::ObjectSizeType> sizes;
+  static cv::Mat A, B; 
+  static vector<Blob> sizes;
 
   j = (i+j)/2; 
   
@@ -108,13 +108,13 @@ bool targetPersistsOverGap( vector<string> &names, Chunks &chunks, int i, int j,
     SWAP(i,j); 
   
   cout << "Try comparing " << names[i] << " with " << names[j] << endl;
-  A = read(names[i].c_str(), options); 
-  B = read(names[j].c_str(), options); 
+  read(A, names[i].c_str(), options); 
+  read(B, names[j].c_str(), options); 
   Blob target = region; 
   
-  A = delta(A, B, target);
-  A = threshold(A, options); 
-  A = morphology(A, options);
+  delta(A, B, target);
+  threshold(A, options); 
+  morphology(A, options);
   connectedComponents(A, sizes);
   bool a = (sizes.size() > 0); 
   sprintf(outname, "blob-%s-%s.jpg", names[i].c_str(), names[j].c_str());
@@ -134,7 +134,7 @@ int createChunks( vector<string> &names, Chunks &chunks )
   {
     int master=0, left, right, s;
     Chunk *chunk=NULL, *prev=NULL; 
-    ImageType::Pointer im; 
+    cv::Mat im; 
     
     /* Output images with target bounding box drawn. */
     bool tracking = false; 
@@ -201,11 +201,13 @@ int createChunks( vector<string> &names, Chunks &chunks )
    
   }
   
-  catch( itk::ExceptionObject & err )
+
+  catch( cv::Exception &e )
   {
-    std::cerr << "ExceptionObject caught !" << std::endl;
-    std::cerr << err << std::endl;
-    return EXIT_FAILURE;
+      std::cerr << "-- Exception ------\n" 
+                << e.what() << std::endl
+                << "-------------------\n";
+      return EXIT_FAILURE;
   }
   catch( TrackException & err ) 
   {

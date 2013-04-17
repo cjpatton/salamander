@@ -51,7 +51,7 @@ void read( cv::Mat&, const char *, const param_t &options );
 void delta( cv::Mat&, const cv::Mat&, 
             bool thresh, const param_t &options );
 
-void delta( cv::Mat &, const cv::Mat&, const Blob& ); 
+void delta( cv::Mat&, const cv::Mat&, const Blob& ); 
                           
 void threshold( cv::Mat&, const param_t &options ); 
 
@@ -61,9 +61,9 @@ void write( const cv::Mat&, const char * );
 
 void copy( cv::Mat&, const cv::Mat& ); 
 
-//void connectedComponents( 
-//  cv::Mat &im, 
-//  std::vector<RelabelComponentImageFilterType::ObjectSizeType> &sizes );
+void connectedComponents( 
+  cv::Mat &im, 
+  std::vector<Blob> &sizes );
 
 int getBlobs( const cv::Mat &, std::vector<Blob> &blobs ); 
 
