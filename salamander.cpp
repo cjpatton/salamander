@@ -1,7 +1,7 @@
 /* John Muir Institute for the Environment
  * University of California, Davis
  * 
- * salamander.cxx
+ * salamander.cpp
  * Implementation of the image processing pipeline. This file is part of
  * the Salamander project. 
  * 
@@ -22,7 +22,7 @@
  */
 
 #include "salamander.h"
-#include "blob.h"
+#include "blobs.h"
 #include "files.h"
 #include "opencv2/imgproc/imgproc.hpp"
 #include <algorithm> // sort()

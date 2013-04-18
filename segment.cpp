@@ -1,7 +1,7 @@
 /* John Muir Institute for the Environment
  * University of California, Davis
  * 
- * segment.cxx
+ * segment.cpp
  * Top-level program applies image processing pipeline to a stream of 
  * files and outputs video segments containg targets. This file is part 
  * of the Salamander project. 

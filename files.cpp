@@ -1,7 +1,7 @@
 /* John Muir Institute for the Environment
  * University of California, Davis
  * 
- * files.cxx
+ * files.cpp
  * Routines and data structures for handling input file names and command
  * line parameters. This file is part of the Salamander project. 
  * 

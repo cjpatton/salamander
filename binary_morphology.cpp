@@ -1,7 +1,7 @@
 /* John Muir Institute for the Environment
  * University of California, Davis
  * 
- * binary_morphology.cxx
+ * binary_morphology.cpp
  * Apply binary morphology to a series of images. This file is part of 
  * the Salamander project. 
  * 

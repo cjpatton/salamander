@@ -26,7 +26,7 @@
 #define CHUNK_H
 #include <vector>
 #include <iostream>
-#include "blob.h"
+#include "blobs.h"
 
 
 class TrackException {

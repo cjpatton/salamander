@@ -1,8 +1,9 @@
 /* John Muir Institute for the Environment
  * University of California, Davis
  * 
- * blob.cxx
- * Data structure for representing "blobs". This file is part of the 
+ * blobs.cpp
+ * Data structures for representing "blobs" and implementation of 
+ * connected component analysis. This file is part of the 
  * Salamander project. 
  * 
  * Copyright (C) 2013 Christopher Patton 
@@ -22,16 +23,11 @@
  */
 
 #include "salamander.h"
-#include "blob.h"
+#include "blobs.h"
 #include <iostream>
 
 #define min(x,y) (x < y ? x : y)
 #define max(x,y) (x < y ? y : x)
-
-
-
-
-
 
 Blob::Blob() {
   frame_width = frame_height = 0; 
@@ -65,7 +61,7 @@ Blob::Blob() {
 //
 //  elongation = e; 
 //  volume = v;    
-//} // salamander.cxx::getBlobs() constr
+//} // salamander.cpp::getBlobs() constr
 
 Blob::Blob( int top, int right, int bottom, int left ) 
 {
@@ -83,7 +79,7 @@ Blob::Blob( int top, int right, int bottom, int left )
 Blob Blob::operator*(int scale) const 
 /* Images can be scaled in order to improve efficiency. This operator 
  * is useful for rescaling blobs the original image. Say a scaling factor
- * of 3 is used. Then salamander.cxx::drawBoundingBox() should be used 
+ * of 3 is used. Then salamander.cpp::drawBoundingBox() should be used 
  * like drawBoundingBox(original_image, target_blob * 3). */ 
 {
   Blob newBlob = *this;

@@ -1,9 +1,9 @@
 /* John Muir Institute for the Environment
  * University of California, Davis
  * 
- * blob.h
- * Data structure for representing "blobs". This file is part of the 
- * Salamander project. 
+ * blobs.h
+ * Data structures for representing "blobs" and connected component 
+ * analysis. This file is part of the Salamander project. 
  * 
  * Copyright (C) 2013 Christopher Patton 
  *
@@ -22,8 +22,8 @@
  */
 
 
-#ifndef BLOB_H
-#define BLOB_H
+#ifndef BLOBS_H
+#define BLOBS_H
 
 #include "salamander.h"
 #define UNASSIGNED -1
@@ -160,4 +160,5 @@ private:
   cv::Mat img; 
    
 }; // class ConnectedComponents
-#endif // BLOB_H
+
+#endif // BLOBS_H

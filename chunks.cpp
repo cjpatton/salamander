@@ -1,7 +1,7 @@
 /* John Muir Institute for the Environment
  * University of California, Davis
  * 
- * chunks.cxx
+ * chunks.cpp
  * Data structures for representing/segmenting a video stream and tracking
  * targets across frames. This file is part of the Salamander project. 
  * 

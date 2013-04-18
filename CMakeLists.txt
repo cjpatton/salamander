@@ -9,20 +9,20 @@ find_package( OpenCV REQUIRED )
 # This project is designed to be built outside the Insight source tree.
 project(salamander)
 
-add_executable(binmorph binary_morphology.cxx)
-add_executable(binthresh binary_threshold.cxx)
-add_executable(segment segment.cxx)
-add_executable(filter filter.cxx)
-add_executable(detect detect.cxx)
-add_executable(test test.cxx)
+add_executable(binmorph binary_morphology.cpp)
+add_executable(binthresh binary_threshold.cpp)
+add_executable(segment segment.cpp)
+add_executable(filter filter.cpp)
+add_executable(detect detect.cpp)
+add_executable(test test.cpp)
 add_library(salamander SHARED files.h
                               salamander.h
-                              files.cxx
-                              salamander.cxx
+                              files.cpp
+                              salamander.cpp
                               chunks.h
-                              blob.h
-                              chunks.cxx
-                              blob.cxx)
+                              blobs.h
+                              chunks.cpp
+                              blobs.cpp)
 
 target_link_libraries(salamander ${OpenCV_LIBS})
 target_link_libraries(binmorph ${OpenCV_LIBS} salamander)

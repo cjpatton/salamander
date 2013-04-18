@@ -1,7 +1,7 @@
 /* John Muir Institute for the Environment
  * University of California, Davis
  * 
- * binary_threshold.cxx
+ * binary_threshold.cpp
  * Apply binary threshold to a series of images. This file is part of 
  * the Salamander project. 
  * 
