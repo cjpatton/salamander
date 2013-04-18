@@ -74,7 +74,7 @@ int main(int argc, const char **argv)
             sprintf(outname, "binmorph%d.jpg", i);
             delta(im, names[i-1].c_str(), names[i].c_str(), true, options);
             morphology( im, options );
-            write( im, outname );
+            cv::imwrite( outname, im );
         }
     }
 

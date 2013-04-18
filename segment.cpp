@@ -62,19 +62,20 @@ int  outname_index = 0;
 bool delta( string &img1, string &img2, cv::Mat &image, bool writeout=false ) 
 {
   cv::Mat im;
-  static vector<Blob> sizes;
+  static vector<Blob> blobs;
 
   delta(im, img1.c_str(), img2.c_str(), true, options );
   morphology( im, options  );
-  connectedComponents( im, sizes );
+  getBlobs( im, blobs );
+
   if (writeout) {
     sprintf(outname, "%s%d.jpg", options.prefix, outname_index++);
-    write( im, outname ); 
+    cv::imwrite( outname, im ); 
   }
 
   /* if there are blobs in the delta image, a target is in the frame */
-  if( sizes.size() > 0 ) {
-    copy(image, im); // save a copy of the delta image as a side-effect
+  if( blobs.size() > 0 ) {
+    image = im.clone(); // save a copy of the delta image as a side-effect
     return true;
   }
 
@@ -85,7 +86,7 @@ bool delta( string &img1, string &img2, cv::Mat &image, bool writeout=false )
 bool targetPersistsOverGap( vector<string> &names, Chunks &chunks, int i, int j, const Blob &region )
 { 
   static cv::Mat A, B; 
-  static vector<Blob> sizes;
+  static vector<Blob> blobs;
 
   j = (i+j)/2; 
   
@@ -115,10 +116,10 @@ bool targetPersistsOverGap( vector<string> &names, Chunks &chunks, int i, int j,
   delta(A, B, target);
   threshold(A, options); 
   morphology(A, options);
-  connectedComponents(A, sizes);
-  bool a = (sizes.size() > 0); 
+  getBlobs(A, blobs);
+  bool a = (blobs.size() > 0); 
   sprintf(outname, "blob-%s-%s.jpg", names[i].c_str(), names[j].c_str());
-  write( A, outname ); 
+  cv::imwrite( outname, A ); 
 
   return a;
 }

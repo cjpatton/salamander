@@ -61,7 +61,7 @@ int main(int argc, const char **argv)
             sprintf(outname, "binthresh%d.jpg", i);
             cv::Mat im;
             delta(im, names[i-1].c_str(), names[i].c_str(), threshold, options);
-            write( im, outname );
+            cv::imwrite( outname, im );
         }
     }
 

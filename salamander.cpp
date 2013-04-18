@@ -49,12 +49,9 @@ void delta( cv::Mat &delta,
   /* Pixel-wise absolute difference */  
   cv::absdiff(A, B, delta); 
 
-  if (thresh) {
-     //cv::threshold(delta, thresh, 100, 255, CV_THRESH_OTSU); /* Threshold value doesn't matter */ 
-     cv::threshold(delta, delta, options.low, 255 , CV_THRESH_BINARY); /* TODO OpenCV's binary threshold 
-                                                                          filter is less robust. I might 
-                                                                          right my own? */ 
-  }
+  if (thresh)
+    threshold(delta, options); 
+  
 } // original delta() 
 
 
@@ -62,7 +59,7 @@ void threshold( cv::Mat &img, const char *in, const param_t &options )
 /* Binary threshold. */ 
 {
   img = cv::imread( in, CV_LOAD_IMAGE_GRAYSCALE ); 
-  cv::threshold(img, img, options.low, 255 , CV_THRESH_BINARY); /* TODO */ 
+  threshold(img, options); 
 } // threshold()
 
 
@@ -85,7 +82,7 @@ void delta( cv::Mat &img1, const cv::Mat &img2,
   cv::absdiff(img1, img2, img1); 
 
   if (thresh) {
-     cv::threshold(img1, img1, options.low, 255 , CV_THRESH_BINARY); /* TODO */ 
+     threshold(img1, options); /* TODO */ 
   }
 } // delata() 
 
@@ -107,7 +104,27 @@ void delta( cv::Mat &img1, const cv::Mat &img2, const Blob &blob )
 void threshold( cv::Mat &img, const param_t &options )
 /* Apply binary threshold filter to delta. */  
 {
-  cv::threshold(img, img, options.low, 255 , CV_THRESH_BINARY); /* TODO threshold range */ 
+  //cv::threshold(delta, thresh, 100, 255, CV_THRESH_OTSU); /* Threshold value doesn't matter */
+
+  int nrows = img.rows;
+  int ncols = img.cols;
+
+  if (img.isContinuous())
+  {
+    ncols *= nrows;
+    nrows = 1;
+  }
+
+  int i, j;
+  uchar* p;
+  for (i = 0; i < nrows; ++i)
+  {
+    p = img.ptr<uchar>(i);
+    for (j = 0; j < ncols; ++j)
+    {
+      p[j] = (uchar)(options.low <= p[j] && p[j] < options.high ? 255 : 0); 
+    }
+  }
 } // threshold() 
 
 void morphology( cv::Mat &img, const param_t &options )
@@ -132,34 +149,9 @@ void morphology( cv::Mat &img, const param_t &options )
 
 } // threshold() 
 
-void copy( cv::Mat &dest, const cv::Mat &src )
-/* Duplicate an image. */ 
-{
-  dest = src.clone();
-} // copy() 
-
-void write( const cv::Mat &img, const char *out )
-/* Cast an image to JPEG compatible output and write to disk. */
-{
-  cv::imwrite( out, img ); 
-} // write() 
-
-
-void connectedComponents( 
- cv::Mat &im, 
- std::vector<Blob> &sizes ) 
-{
-  sizes.clear(); 
-  ConnectedComponents cc( im ); 
-  for (int i = 0; i < cc.size(); i++) 
-    sizes.push_back(cc[i]);
-} // connectedComponents() 
-
-
 int getBlobs( const cv::Mat &img, std::vector<Blob> &blobs ) /* TODO */ 
-/* Connected component analysis, but give more information about the blobs. 
- * Return a vector of Blob objects with bounding box, centroid, volume (size), 
- * and elongation. */ 
+/* Perform connected component analysis and return a set of features for each
+ * blob in frame. Expect binary threshold-filtered image. */ 
 {
   blobs.clear(); 
   ConnectedComponents cc( img ); 

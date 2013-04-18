@@ -75,7 +75,7 @@ int main(int argc, const char **argv)
             getBlobs( im, blobs ); 
 
             sprintf(outname, "%s-%s-%s.jpg", options.prefix, names[i-1].c_str(), names[i].c_str()); 
-            write( im, outname ); 
+            cv::imwrite( outname, im ); 
 
             for( j = 0; j < blobs.size(); j++) {
               cout << "     " << blobs[j] << endl; 
