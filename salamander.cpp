@@ -149,7 +149,7 @@ void morphology( cv::Mat &img, const param_t &options )
 
 } // threshold() 
 
-int getBlobs( const cv::Mat &img, std::vector<Blob> &blobs ) /* TODO */ 
+int getBlobs( const cv::Mat &img, std::vector<Blob> &blobs )
 /* Perform connected component analysis and return a set of features for each
  * blob in frame. Expect binary threshold-filtered image. */ 
 {
@@ -160,70 +160,13 @@ int getBlobs( const cv::Mat &img, std::vector<Blob> &blobs ) /* TODO */
   return blobs.size();
 } // getBlobs() 
 
-void drawBoundingBox( const char *in, const char *out, const Blob &blob )  /* TODO */ 
+void drawBoundingBox( const char *in, const char *out, const Blob &blob )
 /* Draw a bounding box on a JPEG image, as specified by a Blob object. Output
  * to a new file. */ 
 {
-//  Reader::Pointer reader = Reader::New();
-//  reader->SetFileName( in );
-//  reader->Update(); 
-//  
-//  InputPixelType pixel;
-//  pixel.SetRed(255); 
-//  pixel.SetGreen(50); 
-//  pixel.SetBlue(0); 
-//
-//  InputImageType::IndexType a, b; 
-//  typedef itk::LineIterator<InputImageType> IteratorType;
-//  IteratorType it(reader->GetOutput(), a, b); 
-//
-//  /* top */ 
-//  a[0] = blob[0]; 
-//  b[0] = blob[1]; 
-//  a[1] = b[1] = blob[2]; 
-//  it = IteratorType(reader->GetOutput(), a, b); 
-//  it.GoToBegin(); 
-//  while(!it.IsAtEnd()) {
-//    it.Set(pixel); 
-//    ++it; 
-//  }
-//  
-//  /* left */ 
-//  a[0] = b[0] = blob[0]; 
-//  a[1] = blob[2]; 
-//  b[1] = blob[3]; 
-//  it = IteratorType(reader->GetOutput(), a, b); 
-//  it.GoToBegin(); 
-//  while(!it.IsAtEnd()) {
-//    it.Set(pixel); 
-//    ++it; 
-//  }
-//
-//  /* right */ 
-//  a[0] = b[0] = blob[1]; 
-//  a[1] = blob[2]; 
-//  b[1] = blob[3]; 
-//  it = IteratorType(reader->GetOutput(), a, b); 
-//  it.GoToBegin(); 
-//  while(!it.IsAtEnd()) {
-//    it.Set(pixel); 
-//    ++it; 
-//  }
-//  
-//  /* bottom */ 
-//  a[0] = blob[0]; 
-//  b[0] = blob[1]; 
-//  a[1] = b[1] = blob[3]; 
-//  it = IteratorType(reader->GetOutput(), a, b); 
-//  it.GoToBegin(); 
-//  while(!it.IsAtEnd()) {
-//    it.Set(pixel); 
-//    ++it; 
-//  }
-//  
-//  typedef itk::ImageFileWriter<InputImageType> RGBWriter; 
-//  RGBWriter::Pointer writer = RGBWriter::New();
-//  writer->SetInput( reader->GetOutput() );
-//  writer->SetFileName( out );
-//  writer->Update();
+  cv::Mat img = cv::imread( in ); 
+  cv::rectangle( img, cv::Point(blob[0],blob[2]), 
+                      cv::Point(blob[1],blob[3]), 
+                      cv::Scalar(128,64,0), 2 );
+  cv::imwrite( out, img ); 
 } // drawBoundingBox() 
