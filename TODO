@@ -1,9 +1,6 @@
-I'm now considering switching to OpenCV. It seems to be a better known image 
-processing framework. It's WAY smaller and supposed to be more efficient since it's
-written in pure C. ITK is primarily used for medical image processing. Plus, 
-OpenCV has a tool for machine learning, which would be cool to learn. I just need to 
-make sure it will give me all the functionality I need.  
+(1) Clustering blobs
 
+(2) Multiple target tracking
 
-
+(3) Run in realtime
 

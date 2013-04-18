@@ -9,14 +9,15 @@ habitats, eg. mice, rats, or salamanders.
 
 Files
 -----
-segment.cxx           -- current top level program. 
-detect.cxx            -- working on more sophisticated detetion scheme
-filter.cxx            -- apply filters to a series of images
-binary_threshold.cxx  -- binthresh
-binary_morphology.cxx -- binmorph
+segment.cpp           -- current top level program. 
+detect.cpp            -- working on more sophisticated detetion scheme
+filter.cpp            -- apply filters to a series of images
+binary_threshold.cpp  -- binthresh
+binary_morphology.cpp -- binmorph
 CMakeLists.txt        -- for cmake 
-salamander.{cxx,h}    -- library implementation of the image processing
-{blob,chunk,files}.{cxx,h} -- various data structures for video segmenting
+salamander.{cpp,h}    -- library implementation of the image processing
+{blobs,chunk,files}.{cpp,h} -- various data structures for detection and video 
+                               segmenting
 ex                    -- some example footage for trying these programs
 
 

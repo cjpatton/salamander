@@ -236,31 +236,26 @@ Testing if gap has target.
 
  
 \section{The Salamander toolkit}
-Salamander is a C++ extension to the Insight Registration and Segmentation Toolkit\footnote
+Salamander was designed originally as a C++ extension to the Insight Registration and 
+Segmentation Toolkit\footnote
 {ITK is an open source product by Kitware and is available at \texttt{http://www.itk.org}.}.
 ITK provides a comprehensive array of image processing algorithms and is designed to 
 be useful in many applications. A key design feature of ITK is its support of generic programming. 
 As well as processing two-dimensional images, it can process multidimensional image and 
 mesh data, making it a successful framework for medical image analysis. This architecture 
-is extremely useful when, for example, a project must adapt and scale to new data formats. 
-However, in our computer vision application, we've restricted ourselves to two dimensinal 
-images and affectively ignore the vast majority of ITK's featurs. As a result, we encurr 
-the overhead of generic programming without gaining its benifits. 
+is extremely useful when, for example, a project must adapt and scale to new formats and 
+higher-dimensional data. However, in our computer vision application, we've restricted 
+ourselves to two dimensinal images and affectively ignore the vast majority of ITK's featurs. 
+As a result, we encurr the overhead of generic programming without gaining its benifits. 
 
-Therefore, it may be prudent to switch to a framework that is centered around computer 
-vision. We will consider the feasibility of using OpenCV\footnote{\texttt{http://opencv.org}.} 
-instead of ITK. OpenCV is written in C and doesn't support generic programming. As long
-as the image processing algorithms we need (pixelwise subtraction, binary thresholding and
-morphology, connected component analysis) are comparably efficient, OpenCV will be a 
-viable replacement. 
-
-Another advantage of OpenCV over ITK is that it provides a well-known means of implementing
-machine learning, something that we'll explore in future iterations of the Salamander 
-project. 
+Therefore, I've decided to switch to OpenCV. OpenCV is written in C and doesn't support 
+generic programming, but is much faster as a result. The major advantage is that OpenCV
+is designed for computer vision applications. An ITK version is available as a separate 
+branch (\texttt{git checkout itk}), but will not be supported in future versions. 
 
 \subsection{Build and install}
-Both ITK and Salamander should be built from source. ITK is available for download at 
-\texttt{http://www.itk.org/ITK/resources/software.html}. As of this writing, Salamander 
+Both OpenCV and Salamander should be built from source. OpenCV is available for download at 
+\texttt{http://www.opencv.org}. As of this writing, Salamander 
 is hosted on github at \texttt{http://www.github.com/cjpatton/ salamander}. The build 
 process for both is identical, as they use \texttt{cmake}. In the source directory, 
 under GNU/Linux: 
@@ -271,7 +266,7 @@ under GNU/Linux:
   $ sudo make install 
   $ sudo ldconfig
 \end{verbatim}
-ITK has a large amount of code and will require a couple hours to finish. As always, 
+OpenCV will build in 30 minutes to an hour. As always, 
 two cores can be assigned to building with \texttt{make -j 3}. 
 
 [TODO] Windows instructions.
