@@ -34,7 +34,7 @@
 
 
 Blob::Blob() {
-  frameWidth = frameHeight = 0; 
+  frame_width = frame_height = 0; 
   bbox[0] = 0;
   bbox[1] = 0;
   bbox[2] = 0;
@@ -52,8 +52,8 @@ Blob::Blob() {
 //   * (0,2) (1,2)
 //   * (0,3) (1,3) */
 //
-//  frameWidth = w; 
-//  frameHeight = h; 
+//  frame_width = w; 
+//  frame_height = h; 
 //
 //  bbox[0] = b[0];
 //  bbox[1] = b[1];
@@ -69,11 +69,11 @@ Blob::Blob() {
 
 Blob::Blob( int top, int right, int bottom, int left ) 
 {
-  frameWidth = frameHeight = 0; 
-  bbox[0] = top;
+  frame_width = frame_height = 0; 
+  bbox[0] = left;
   bbox[1] = right;
-  bbox[2] = bottom;
-  bbox[3] = left;
+  bbox[2] = top;
+  bbox[3] = bottom;
   
   centroid_x = centroid_y = 0; 
   volume = 0; 
@@ -87,19 +87,19 @@ Blob Blob::operator*(int scale) const
  * like drawBoundingBox(original_image, target_blob * 3). */ 
 {
   Blob newBlob = *this;
-  newBlob.frameHeight *= scale; 
-  newBlob.frameWidth *= scale; 
+  newBlob.frame_height *= scale; 
+  newBlob.frame_width *= scale; 
   newBlob.bbox[0] = max(0, bbox[0]*scale); 
-  newBlob.bbox[1] = min(newBlob.frameWidth-1, bbox[1]*scale); 
+  newBlob.bbox[1] = min(newBlob.frame_width-1, bbox[1]*scale); 
   newBlob.bbox[2] = max(0, bbox[2]*scale); 
-  newBlob.bbox[3] = min(newBlob.frameHeight-1, bbox[3]*scale);  
+  newBlob.bbox[3] = min(newBlob.frame_height-1, bbox[3]*scale);  
   return newBlob; 
 } // operator* 
   
 Blob& Blob::operator=(const Blob &blob) 
 {
-  frameWidth = blob.frameWidth; 
-  frameHeight = blob.frameHeight; 
+  frame_width = blob.frame_width; 
+  frame_height = blob.frame_height; 
 
   bbox[0] = blob.bbox[0];
   bbox[1] = blob.bbox[1];
@@ -256,9 +256,9 @@ void Blob::shiftOverMerged( const Blob &merged )
 
   /* Keep new blob within frame. */
   bbox[0] = max(0, bbox[0]);
-  bbox[1] = min(frameWidth, bbox[1]); 
+  bbox[1] = min(frame_width, bbox[1]); 
   bbox[2] = max(0, bbox[2]); 
-  bbox[3] = min(frameHeight, bbox[3]); 
+  bbox[3] = min(frame_height, bbox[3]); 
   
 } // shiftOverMerged()
 
@@ -496,6 +496,8 @@ void ConnectedComponents::ccomp()
           p.component->blob.bbox[2] = rows-1; 
           p.component->blob.bbox[3] = 0; 
           p.component->label = &p;
+          p.component->blob.frame_width = cols; 
+          p.component->blob.frame_height = rows; 
         }
         component_t &c = *p.component;
         c.blob.volume ++;

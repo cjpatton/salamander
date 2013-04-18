@@ -149,10 +149,10 @@ void connectedComponents(
  cv::Mat &im, 
  std::vector<Blob> &sizes ) 
 {
-    sizes.clear(); 
-    ConnectedComponents cc( im ); 
-    for (int i = 0; i < cc.size(); i++) 
-      sizes.push_back(cc[i]);
+  sizes.clear(); 
+  ConnectedComponents cc( im ); 
+  for (int i = 0; i < cc.size(); i++) 
+    sizes.push_back(cc[i]);
 } // connectedComponents() 
 
 

@@ -38,7 +38,7 @@ friend class ConnectedComponents;
   /* Bounding box is used for tracking targets. */
   
   int bbox [4];                 /* bounding box */ 
-  int frameWidth, frameHeight;  /* dimensions of video stream */  
+  int frame_width, frame_height;  /* dimensions of video stream */  
 
   /* Blob centroid, elongation, and volume. These will be used for more
    * sophisticated detection techniques, e.g., when many blobs correspond
