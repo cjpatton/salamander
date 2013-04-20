@@ -1,0 +1,102 @@
+%  \documentclass[letter]{IEEEtran}
+  \documentclass[letter]{article}
+\usepackage[utf8]{inputenc}
+%\usepackage[margin=1in]{geometry}
+\usepackage{tikz}
+\usepackage{ulem}
+\usepackage{graphics}
+\usepackage{sidecap}
+\usepackage{wrapfig}
+
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks,%
+    citecolor=black,%
+    filecolor=black,%
+    linkcolor=black,%
+    urlcolor=black
+}
+
+\def\dashuline{\bgroup 
+  \ifdim\ULdepth=\maxdimen  % Set depth based on font, if not set already
+	  \settodepth\ULdepth{(j}\advance\ULdepth.4pt\fi
+  \markoverwith{\kern.15em
+	\vtop{\kern\ULdepth \hrule width .3em}%
+	\kern.15em}\ULon}
+
+\newcounter{foot}
+\setcounter{foot}{1}
+
+\author{Christopher Patton}
+\date{\today}
+\title{Salamander: computer vision for wildlife research}
+	
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Thinking.
+\end{abstract}
+
+\tableofcontents
+\pagebreak 
+
+[THINK ABOUT THIS] It's true that we lose a bit of information when we apply abs 
+filter. If the target is lighter than the background, then it's old position will be 
+negative in \textit{delta} and the new position will be positive. However, the reverse
+is true if it is darker than the background. Perhaps we can remember the relative 
+darkness of the target when it first appears. 
+
+ 
+[TDOD] experiment with upper threshold higher than 255? Since floating points 
+in ImageType can be higher I'm pretty sure. 
+
+\subsubsection{A more sophisticated scheme}
+[THINK ABOUT THIS IN JUNE] I think a better method would be k-clustering with euclidean 
+distance. In general we've been using $e << d$ morphology factors, assuming that all 
+blobs corresponding to a target would merge as a result of dilation. In addition, we've
+assumed that all noise is squelched in the image processing pipeline. These are bad 
+assumptions in general and will break entirely with bigger targets, e.g. deer. 
+
+A better idea is to use $e = d$ and consider the distribution of blobs. Regions of dense
+blob are likely to correspond to a target in the frame, where blobs in less dense areas 
+are likely noise. We can use k-clustering (or k-centroids?) to identify groups of blobs
+that comprise a target. We then use the bounding box of all these blobs for tracking. 
+
+Of course, k-clustering for any $k$ is NP-hard, so we need to introduce a heuristic for
+[TODO] I should run some tets with the method to see how affective it is in practice. 
+
+\subsubsection{More brainstorming} 
+Marcel talked to me about a totally different blob detection scheme. The frame is 
+segmented into many blocks.\footnote{How to get block size?} We calculate the variance 
+within the blocks and trigger when the signal is outside of expected tolerances. 
+
+\begin{enumerate}
+\item The take-away from our conversation was that higher dimension statistics and information
+about the image must be used. Not just RGB and luminance, but hue. (Read about this.) 
+Blob Detection vs. block-based correlation.
+
+\item The bottleneck of my code in the way it works right now is binary thresholding. It'd be 
+nice to avoid this. 
+
+\item block based correlation may simplify things, but I need to research it first. 
+
+\item My method is less quantifiable. 
+
+\item If there is little color difference between the target and the background ... this is an
+issue in both cases. What information do I have? 
+\end{enumerate}
+
+I think I'll continue with my approach for now, but we must think of the data in more dimensions. 
+Block-based correlation may be useful, but I need to experiment with it before I implement it. 
+I must keep going with my current approach. But, hue vs. luminance. 
+
+My appraoch is hard to make general. This is a serious problem.  
+
+
+\section{Machine learning}
+[FUTURE] I still need to research how and if to do this. 
+
+[TODO] Windows instructions.
+
+\end{document}

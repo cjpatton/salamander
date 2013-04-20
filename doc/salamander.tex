@@ -1,7 +1,15 @@
-\documentclass[letter]{article}
+%  \documentclass[letter]{IEEEtran}
+  \documentclass[letter]{article}
 \usepackage[utf8]{inputenc}
+%\usepackage[margin=1in]{geometry}
 \usepackage{tikz}
 \usepackage{ulem}
+\usepackage{graphics}
+\usepackage{sidecap}
+\usepackage{wrapfig}
+\usepackage[toc,page]{appendix}
+\usepackage{caption}
+\usepackage{subcaption}
 
 \usepackage{hyperref}
 \hypersetup{
@@ -93,11 +101,6 @@ $v_{i}$ from $v_{i-1}$ and store the absolute value of each pixel. Now, all chan
 the frame within the time points $i-1$ to $i$ are reflected in the delta image $d_i$. 
 We can analyse these changes in order to determine if a target has appeared in frame.
 
-[THINK ABOUT THIS] It's true that we lose a bit of information when we apply abs 
-filter. If the target is lighter than the background, then it's old position will be 
-negative in \textit{delta} and the new position will be positive. However, the reverse
-is true if it is darker than the background. Perhaps we can remember the relative 
-darkness of the target when it first appears. 
 
  
  \textbf{binary threshold} $b(d_i) \rightarrow b_i$. The next step converts all pixels 
@@ -114,9 +117,6 @@ threshold range $l$ and $h$ where $l < h$,
     \textrm{black} & \textrm{otherwise.}
   \end{array} \right.
 \] 
-[TDOD] experiment with upper threshold higher than 255? Since floating points 
-in ImageType can be higher I'm pretty sure. 
-
 
  \textbf{binary morphology} $m(b_i) \rightarrow m_i$. finally, the last filter 
 enables us to deal with physical noise. This includes things like shadows,
@@ -146,7 +146,6 @@ function that performs this analysis and returns a list of blobs with the follow
     \textit{bbox} (l,r,t,b) \texttt{ int} & \textrm{Rectangular region bounding the blob.} \\
     \textit{centr} (x, y) \texttt{ int} &   \textrm{Coordinates of blob centroid.} \\ 
     \textit{vol} \texttt{ int} &            \textrm{The number of pixels that comprise the blob.} \\
-    \textit{elong} \texttt{ float} &        \textrm{Elongation, the longest straight line that traverses the blob.}  
   \end{array} \right.
 \] 
 
@@ -180,60 +179,13 @@ frame contains a target:
 With small targets, e.g., mice, rats, and salamanders, this scheme has proven sufficient. 
 However, for larger targets, and for the sake of generality, a better scheme is necessary. 
 
-\subsubsection{A more sophisticated scheme}
-[THINK ABOUT THIS IN JUNE] I think a better method would be k-clustering with euclidean 
-distance. In general we've been using $e << d$ morphology factors, assuming that all 
-blobs corresponding to a target would merge as a result of dilation. In addition, we've
-assumed that all noise is squelched in the image processing pipeline. These are bad 
-assumptions in general and will break entirely with bigger targets, e.g. deer. 
-
-A better idea is to use $e = d$ and consider the distribution of blobs. Regions of dense
-blob are likely to correspond to a target in the frame, where blobs in less dense areas 
-are likely noise. We can use k-clustering (or k-centroids?) to identify groups of blobs
-that comprise a target. We then use the bounding box of all these blobs for tracking. 
-
-Of course, k-clustering for any $k$ is NP-hard, so we need to introduce a heuristic for
-[TODO] I should run some tets with the method to see how affective it is in practice. 
-
-\subsubsection{More brainstorming} 
-Marcel talked to me about a totally different blob detection scheme. The frame is 
-segmented into many blocks.\footnote{How to get block size?} We calculate the variance 
-within the blocks and trigger when the signal is outside of expected tolerances. 
-
-\begin{enumerate}
-\item The take-away from our conversation was that higher dimension statistics and information
-about the image must be used. Not just RGB and luminance, but hue. (Read about this.) 
-Blob Detection vs. block-based correlation.
-
-\item The bottleneck of my code in the way it works right now is binary thresholding. It'd be 
-nice to avoid this. 
-
-\item block based correlation may simplify things, but I need to research it first. 
-
-\item My method is less quantifiable. 
-
-\item If there is little color difference between the target and the background ... this is an
-issue in both cases. What information do I have? 
-\end{enumerate}
-
-I think I'll continue with my approach for now, but we must think of the data in more dimensions. 
-Block-based correlation may be useful, but I need to experiment with it before I implement it. 
-I must keep going with my current approach. But, hue vs. luminance. 
-
-My appraoch is hard to make general. This is a serious problem.  
-
 \subsection{Tracking}
-
 Shifting over merged blobs. 
 Multiple targets. 
 
 \subsection{Segmentation}
 Data structures. 
 Testing if gap has target. 
-
-\section{Machine learning}
-[FUTURE] I still need to research how and if to do this. 
-
  
 \section{The Salamander toolkit}
 Salamander was designed originally as a C++ extension to the Insight Registration and 
@@ -268,8 +220,6 @@ under GNU/Linux:
 \end{verbatim}
 OpenCV will build in 30 minutes to an hour. As always, 
 two cores can be assigned to building with \texttt{make -j 3}. 
-
-[TODO] Windows instructions.
 
 \subsection{A quick example} 
 If you've successfully installed Salamander, you can try this tutorial to see how it 
@@ -350,5 +300,36 @@ E.g.: \texttt{\$ ls video*.jpg | segment -s 3 -t 20 60 -m 20 60}
 
 \subsection{Code documentation}
 [TODO] I hope to generate documentation with doxygen. This will be plain HTML. 
+
+\begin{appendices}
+\section{Filters}
+
+\begin{figure}[h]
+  \centering
+  \begin{subfigure}[b]{0.4\textwidth}
+      \centering
+      \includegraphics[width=\textwidth]{tracking.jpg}
+      \vspace{5pt}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.4\textwidth}
+      \centering
+      \includegraphics[width=\textwidth]{video_delta.jpg}
+      \caption{delta}
+  \end{subfigure} \\
+  \begin{subfigure}[b]{0.4\textwidth}
+      \centering
+      \includegraphics[width=\textwidth]{video_binthresh.jpg}
+      \caption{binary threshold}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.4\textwidth}
+      \centering
+      \includegraphics[width=\textwidth]{video_binmorph.jpg}
+      \caption{binary morphology}
+  \end{subfigure}
+  \caption{Visualisation of image processing pipeline}
+
+\end{figure}
+
+\end{appendices}
 
 \end{document}
